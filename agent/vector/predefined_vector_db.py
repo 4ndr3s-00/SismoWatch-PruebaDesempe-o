@@ -200,11 +200,11 @@ class PredefinedVectorDB:
         self,
         index_path: Optional[str] = None,
         model: str = "all-minilm",
-        host: str = "http://127.0.0.1:11434"
+        host: Optional[str] = None
     ):
         self.index_path = index_path or DEFAULT_INDEX_PATH
         self.model = model
-        self.host = host
+        self.host = (host or os.environ.get("OLLAMA_HOST", "http://127.0.0.1:11434")).rstrip("/")
         self.vector_records: List[Dict[str, Any]] = []
         os.makedirs(os.path.dirname(self.index_path), exist_ok=True)
         self._initialize_vector_store()

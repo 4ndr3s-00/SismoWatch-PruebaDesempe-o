@@ -104,6 +104,9 @@ services:
       DB_READER_PASSWORD: ${DB_READER_PASSWORD:-CuratedReaderPass123!}
       JWT_SECRET: ${JWT_SECRET:-super_secret_jwt_key_sismowatch_prod_sec_2026}
       API_PORT: 8000
+      OLLAMA_HOST: ${OLLAMA_HOST:-http://host.docker.internal:11434}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     ports:
       - "8000:8000"
     volumes:
@@ -111,6 +114,10 @@ services:
       - ./webapp/frontend:/app/frontend
       - ./agent:/app/agent
       - ./quality:/app/quality
+      - ./data:/app/data
+      - ./pipeline:/app/pipeline
+      - ./spark:/app/spark
+      - ./openmetadata:/app/openmetadata
     networks:
       - sismowatch_net
 
