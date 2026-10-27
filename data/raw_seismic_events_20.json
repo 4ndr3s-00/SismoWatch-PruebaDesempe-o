@@ -1,0 +1,486 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "generated": 1729000000000,
+    "url": "https://earthquake.usgs.gov/fdsnws/event/1/query?format=geojson&limit=20",
+    "title": "USGS Real-Time Seismic Feed (Official 20 Test Events)",
+    "status": 200,
+    "api": "1.10.3",
+    "count": 20
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "us7000col01",
+      "properties": {
+        "mag": 4.5,
+        "place": "14 km E of Mesa de Los Santos, Colombia",
+        "time": 1729012000000,
+        "updated": 1729013000000,
+        "tz": null,
+        "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us7000col01",
+        "detail": "https://earthquake.usgs.gov/fdsnws/event/1/query?eventid=us7000col01",
+        "felt": 34,
+        "cdi": 4.1,
+        "mmi": 4.3,
+        "alert": "green",
+        "status": "reviewed",
+        "tsunami": 0,
+        "sig": 312,
+        "net": "us",
+        "code": "7000col01",
+        "ids": ",us7000col01,",
+        "sources": ",us,",
+        "types": ",origin,phase-data,",
+        "nst": 42,
+        "dmin": 0.45,
+        "rms": 0.32,
+        "gap": 48.0,
+        "magType": "mww",
+        "type": "earthquake",
+        "title": "M 4.5 - 14 km E of Mesa de Los Santos, Colombia"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-73.1200, 6.7800, 148.5]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "us7000col02",
+      "properties": {
+        "mag": 3.8,
+        "place": "8 km SW of Dabeiba, Antioquia, Colombia",
+        "time": 1729015600000,
+        "updated": 1729016200000,
+        "felt": 12,
+        "alert": null,
+        "status": "reviewed",
+        "tsunami": 0,
+        "sig": 221,
+        "net": "us",
+        "nst": 28,
+        "magType": "ml",
+        "type": "earthquake"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.3200, 7.0100, 24.2]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "us7000col03",
+      "properties": {
+        "mag": 5.2,
+        "place": "32 km WSW of Tumaco, Nariño, Colombia",
+        "time": 1729019200000,
+        "updated": 1729021000000,
+        "felt": 85,
+        "alert": "green",
+        "status": "reviewed",
+        "tsunami": 0,
+        "sig": 415,
+        "net": "us",
+        "nst": 65,
+        "magType": "mww",
+        "type": "earthquake"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-78.9800, 1.6500, 35.0]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "us7000col04",
+      "properties": {
+        "mag": 2.9,
+        "place": "5 km N of Zapatoca, Santander, Colombia",
+        "time": 1729022800000,
+        "updated": 1729023400000,
+        "felt": null,
+        "alert": null,
+        "status": "reviewed",
+        "tsunami": 0,
+        "sig": 129,
+        "net": "us",
+        "nst": 19,
+        "magType": "ml",
+        "type": "earthquake"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-73.2700, 6.8600, 132.0]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "us7000col05",
+      "properties": {
+        "mag": 6.1,
+        "place": "Off the coast of Esmeraldas, Ecuador",
+        "time": 1729026400000,
+        "updated": 1729028000000,
+        "felt": 340,
+        "alert": "yellow",
+        "status": "reviewed",
+        "tsunami": 0,
+        "sig": 572,
+        "net": "us",
+        "nst": 98,
+        "magType": "mww",
+        "type": "earthquake"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-79.8200, 0.9800, 18.0]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "us7000col06",
+      "properties": {
+        "mag": 3.4,
+        "place": "12 km SE of Murindó, Antioquia, Colombia",
+        "time": 1729030000000,
+        "updated": 1729030500000,
+        "felt": 4,
+        "alert": null,
+        "status": "reviewed",
+        "tsunami": 0,
+        "sig": 178,
+        "net": "us",
+        "nst": 22,
+        "magType": "ml",
+        "type": "earthquake"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-76.6800, 6.9400, 15.4]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "us7000col07",
+      "properties": {
+        "mag": 4.1,
+        "place": "21 km NE of Tauramena, Casanare, Colombia",
+        "time": 1729033600000,
+        "updated": 1729034200000,
+        "felt": 19,
+        "alert": null,
+        "status": "reviewed",
+        "tsunami": 0,
+        "sig": 259,
+        "net": "us",
+        "nst": 37,
+        "magType": "mb",
+        "type": "earthquake"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-72.6100, 5.1400, 8.2]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "us7000col08",
+      "properties": {
+        "mag": 2.5,
+        "place": "3 km S of Los Santos, Santander, Colombia",
+        "time": 1729037200000,
+        "updated": 1729037800000,
+        "felt": null,
+        "alert": null,
+        "status": "reviewed",
+        "tsunami": 0,
+        "sig": 96,
+        "net": "us",
+        "nst": 15,
+        "magType": "ml",
+        "type": "earthquake"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-73.1100, 6.7500, 142.1]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "us7000col09",
+      "properties": {
+        "mag": 5.7,
+        "place": "Near the coast of Northern Chile",
+        "time": 1729040800000,
+        "updated": 1729042000000,
+        "felt": 180,
+        "alert": "green",
+        "status": "reviewed",
+        "tsunami": 0,
+        "sig": 498,
+        "net": "us",
+        "nst": 84,
+        "magType": "mww",
+        "type": "earthquake"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-70.3500, -21.4500, 42.6]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "us7000col10",
+      "properties": {
+        "mag": 3.1,
+        "place": "18 km NW of Cucuta, Norte de Santander, Colombia",
+        "time": 1729044400000,
+        "updated": 1729045000000,
+        "felt": 6,
+        "alert": null,
+        "status": "reviewed",
+        "tsunami": 0,
+        "sig": 148,
+        "net": "us",
+        "nst": 25,
+        "magType": "ml",
+        "type": "earthquake"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-72.6300, 8.0400, 110.2]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "us7000col11",
+      "properties": {
+        "mag": 4.8,
+        "place": "45 km S of Puerto Armuelles, Panama",
+        "time": 1729048000000,
+        "updated": 1729049100000,
+        "felt": 52,
+        "alert": "green",
+        "status": "reviewed",
+        "tsunami": 0,
+        "sig": 354,
+        "net": "us",
+        "nst": 51,
+        "magType": "mb",
+        "type": "earthquake"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-82.8600, 7.8900, 14.0]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "us7000col12",
+      "properties": {
+        "mag": 2.2,
+        "place": "6 km W of Betulia, Santander, Colombia",
+        "time": 1729051600000,
+        "updated": 1729052100000,
+        "felt": null,
+        "alert": null,
+        "status": "reviewed",
+        "tsunami": 0,
+        "sig": 74,
+        "net": "us",
+        "nst": 14,
+        "magType": "ml",
+        "type": "earthquake"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-73.3400, 6.9100, 126.8]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "us7000col13",
+      "properties": {
+        "mag": 3.9,
+        "place": "15 km NE of El Calvario, Meta, Colombia",
+        "time": 1729055200000,
+        "updated": 1729056000000,
+        "felt": 28,
+        "alert": null,
+        "status": "reviewed",
+        "tsunami": 0,
+        "sig": 234,
+        "net": "us",
+        "nst": 33,
+        "magType": "ml",
+        "type": "earthquake"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-73.6100, 4.4500, 9.8]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "us7000col14",
+      "properties": {
+        "mag": 5.0,
+        "place": "Central Mid-Atlantic Ridge",
+        "time": 1729058800000,
+        "updated": 1729060000000,
+        "felt": null,
+        "alert": null,
+        "status": "reviewed",
+        "tsunami": 0,
+        "sig": 385,
+        "net": "us",
+        "nst": 60,
+        "magType": "mb",
+        "type": "earthquake"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-34.2200, 0.5400, 10.0]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "us7000col15",
+      "properties": {
+        "mag": 3.6,
+        "place": "11 km WNW of Lenguazaque, Cundinamarca, Colombia",
+        "time": 1729062400000,
+        "updated": 1729063000000,
+        "felt": 15,
+        "alert": null,
+        "status": "reviewed",
+        "tsunami": 0,
+        "sig": 201,
+        "net": "us",
+        "nst": 29,
+        "magType": "ml",
+        "type": "earthquake"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-73.8100, 5.3400, 145.0]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "us7000col16",
+      "properties": {
+        "mag": 6.4,
+        "place": "Southern Peru Region",
+        "time": 1729066000000,
+        "updated": 1729067800000,
+        "felt": 410,
+        "alert": "yellow",
+        "status": "reviewed",
+        "tsunami": 0,
+        "sig": 630,
+        "net": "us",
+        "nst": 115,
+        "magType": "mww",
+        "type": "earthquake"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-74.4500, -15.8200, 28.0]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "us7000col17",
+      "properties": {
+        "mag": 2.7,
+        "place": "4 km ENE of Jordan, Santander, Colombia",
+        "time": 1729069600000,
+        "updated": 1729070100000,
+        "felt": null,
+        "alert": null,
+        "status": "reviewed",
+        "tsunami": 0,
+        "sig": 112,
+        "net": "us",
+        "nst": 18,
+        "magType": "ml",
+        "type": "earthquake"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-73.0600, 6.7400, 138.4]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "us7000col18",
+      "properties": {
+        "mag": 4.3,
+        "place": "28 km NW of Valdivia, Antioquia, Colombia",
+        "time": 1729073200000,
+        "updated": 1729074000000,
+        "felt": 31,
+        "alert": null,
+        "status": "reviewed",
+        "tsunami": 0,
+        "sig": 284,
+        "net": "us",
+        "nst": 45,
+        "magType": "ml",
+        "type": "earthquake"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-75.6100, 7.3800, 31.5]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "us7000col19",
+      "properties": {
+        "mag": 3.3,
+        "place": "16 km S of Urao, Merida, Venezuela",
+        "time": 1729076800000,
+        "updated": 1729077400000,
+        "felt": 8,
+        "alert": null,
+        "status": "reviewed",
+        "tsunami": 0,
+        "sig": 169,
+        "net": "us",
+        "nst": 24,
+        "magType": "mb",
+        "type": "earthquake"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-71.5500, 8.4200, 12.3]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "us7000col20",
+      "properties": {
+        "mag": 4.9,
+        "place": "Near the coast of Chiapas, Mexico",
+        "time": 1729080400000,
+        "updated": 1729081500000,
+        "felt": 64,
+        "alert": "green",
+        "status": "reviewed",
+        "tsunami": 0,
+        "sig": 368,
+        "net": "us",
+        "nst": 58,
+        "magType": "mb",
+        "type": "earthquake"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-93.7800, 14.8900, 45.0]
+      }
+    }
+  ]
+}

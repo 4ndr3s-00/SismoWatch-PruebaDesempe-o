@@ -1,0 +1,37 @@
+{
+  "type": "FeatureCollection",
+  "metadata": {
+    "title": "Sensor Test Anomalies (for Unit Testing Operator Diagnostics Only)",
+    "count": 2
+  },
+  "features": [
+    {
+      "type": "Feature",
+      "id": "sensor_err_01",
+      "properties": {
+        "mag": -99.9,
+        "place": "Unknown Sensor Fault Station #4",
+        "time": 1729084000000,
+        "status": "faulty"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-73.1200, 6.7800, -15.0]
+      }
+    },
+    {
+      "type": "Feature",
+      "id": "sensor_err_02",
+      "properties": {
+        "mag": 15.5,
+        "place": "",
+        "time": 1729087600000,
+        "status": "drift"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [-250.0000, 195.0000, 10.0]
+      }
+    }
+  ]
+}
