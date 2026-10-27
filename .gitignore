@@ -16,6 +16,8 @@ venv/
 build/
 develop-eggs/
 dist/
+!webapp/frontend/dist/
+!webapp/frontend/dist/**
 downloads/
 eggs/
 .eggs/
@@ -23,6 +25,8 @@ lib/
 lib64/
 parts/
 sdist/
+!webapp/frontend/dist/
+!webapp/frontend/dist/**
 var/
 wheels/
 *.egg-info/

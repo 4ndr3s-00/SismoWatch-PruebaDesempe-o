@@ -94,3 +94,61 @@ def test_chat_api_with_ai_agent():
     inj_data = inj_resp.json()
     assert "[ESCUDO DE SEGURIDAD]" in inj_data["response"]
     assert inj_data["telemetry"]["anti_injection_status"] == "BLOCKED"
+
+def test_event_detail_endpoint():
+    """Verify single event retrieval by ID."""
+    resp = client.get("/api/events/us7000col16")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert data["event_id"] == "us7000col16"
+    assert data["magnitude"] == 6.4
+    assert "Southern Peru" in data["place"]
+
+    # Not found
+    nf_resp = client.get("/api/events/non_existent_id")
+    assert nf_resp.status_code == 404
+
+def test_reports_latest_and_export():
+    """Verify latest analytical report and export endpoints."""
+    # Latest report
+    resp = client.get("/api/reports/latest")
+    assert resp.status_code == 200
+    data = resp.json()
+    assert "report_id" in data
+    assert "Informe Ejecutivo" in data["summary"]
+
+    # Export CSV
+    csv_resp = client.get("/api/reports/export?format=csv")
+    assert csv_resp.status_code == 200
+    assert "text/csv" in csv_resp.headers["content-type"]
+
+    # Export JSON
+    json_resp = client.get("/api/reports/export?format=json")
+    assert json_resp.status_code == 200
+    assert json_resp.json()["count"] == 20
+
+def test_quarantine_and_admin_role_security():
+    """Verify admin endpoints are protected against non-admin callers."""
+    # 1. Anonymous / Guest analyst cannot access quarantine
+    resp = client.get("/api/quality/quarantine")
+    assert resp.status_code == 403
+
+    # 2. Login as admin
+    login_resp = client.post("/api/auth/login", json={"username": "admin", "password": "adminpassword2026"})
+    admin_token = login_resp.json()["access_token"]
+    admin_headers = {"Authorization": f"Bearer {admin_token}"}
+
+    # 3. Admin can access quarantine
+    q_resp = client.get("/api/quality/quarantine", headers=admin_headers)
+    assert q_resp.status_code == 200
+    assert q_resp.json()["data_integrity_score"] == 100.0
+
+    # 4. Admin backfill
+    bf_resp = client.post("/api/admin/backfill", headers=admin_headers)
+    assert bf_resp.status_code == 200
+    assert bf_resp.json()["status"] == "SUCCESS"
+
+    # 5. Admin report regeneration
+    regen_resp = client.post("/api/admin/reports/regenerate", headers=admin_headers)
+    assert regen_resp.status_code == 200
+    assert regen_resp.json()["status"] == "SUCCESS"

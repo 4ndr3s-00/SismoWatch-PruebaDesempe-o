@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import "leaflet/dist/leaflet.css";
 
 @layer base {
   :root {
@@ -63,6 +64,11 @@
 .leaflet-container {
   background: #09090b !important;
   font-family: inherit !important;
+  height: 100% !important;
+  width: 100% !important;
+  min-height: 400px !important;
+  z-index: 10 !important;
+  filter: invert(100%) hue-rotate(180deg) brightness(92%) contrast(90%);
 }
 
 .leaflet-popup-content-wrapper {
@@ -71,6 +77,7 @@
   border: 1px solid rgba(255, 255, 255, 0.1) !important;
   border-radius: 8px !important;
   box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5) !important;
+  filter: invert(100%) hue-rotate(180deg);
 }
 
 .leaflet-popup-tip {
