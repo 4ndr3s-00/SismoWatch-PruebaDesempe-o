@@ -2,9 +2,9 @@
 
 ## 1. Executive Summary & Purpose
 
-**SismoWatch** is an enterprise-grade seismic event monitoring and intelligence platform designed under the **Medallion Architecture (Raw $\rightarrow$ Staging $\rightarrow$ Curated)** with a dedicated lateral **Quarantine Branch (Dead-Letter Store)**.
+**SismoWatch** is a streamlined seismic event monitoring and intelligence platform designed under the **Medallion Architecture (Raw $\rightarrow$ Staging $\rightarrow$ Curated)** accompanied by an operational **Sensor Diagnostics & Telemetry Module**.
 
-The system automates the ingestion of seismic data from geological services (such as USGS / Colombian Geological Service - SGC), orchestrates data transformations and validation rules using **Apache Airflow** and **Apache Spark (PySpark)**, enforces a strict multi-layer data quality framework, ensures zero unauthorized data tampering, and provides a real-time reactive consumption layer powered by a **Local AI Agent** with deterministic anti-hallucination guardrails.
+The system automates the ingestion of seismic data from geological services (USGS / SGC), orchestrates data transformations and validation rules using **Apache Airflow** and **Apache Spark (PySpark)**, enforces a pragmatic data quality framework without over-engineering, immediately prunes all useless API fields in the Silver transition, and provides a real-time reactive consumption layer powered by a **Local AI Agent** with deterministic anti-hallucination guardrails.
 
 ---
 
@@ -35,16 +35,16 @@ flowchart TD
         end
 
         SPARK_JOB --> QG1
-        QG1 -->|Pass| STAGING_LAYER["Staging Layer (Silver)\nParquet Files + staging.seismic_events"]
-        QG1 -->|Fail| QUARANTINE_BRANCH
+        QG1 -->|Pass: Keep only 7 core fields| STAGING_LAYER["Staging Layer (Silver)\nParquet Files + staging.seismic_events\n(All useless API metadata pruned)"]
+        QG1 -->|Anomaly Detected| DIAGNOSTICS_MODULE
         
         STAGING_LAYER --> QG2
         QG2 -->|Pass| CURATED_STAGING["staging.temp_curated_events"]
-        QG2 -->|Fail| QUARANTINE_BRANCH
+        QG2 -->|Anomaly Detected| DIAGNOSTICS_MODULE
     end
 
-    subgraph QUARANTINE_BRANCH["Lateral Quarantine (Dead Letter)"]
-        QUARANTINE_TABLE["PostgreSQL: quarantine.rejected_events\n- rejection_id\n- original_payload (JSONB)\n- failed_rule_code & description\n- pipeline_stage\n- run_id & timestamp\n- resolution_status (PENDING/REPROCESSED)"]
+    subgraph DIAGNOSTICS_MODULE["Operator View: Sensor Diagnostics & Telemetry"]
+        DIAGNOSTICS_TABLE["PostgreSQL: diagnostics.sensor_anomalies\n- diagnostic_id\n- sensor_id\n- raw_reading (JSONB)\n- issue_code & diagnostic_message\n- detected_at & sensor_status (NEEDS_CHECK/RESOLVED)\n(Provides real-time visibility into sensor health)"]
     end
 
     subgraph CURATED_LAYER["4. Curated Layer (Gold)"]
@@ -96,10 +96,14 @@ flowchart TD
 
 ### 3.2 Staging Layer (Silver)
 * **Storage Location:** `/data/lakehouse/staging/` (Parquet) and table `staging.seismic_events`.
+* **Pragmatic Pruning of Useless Fields:**
+  * Raw APIs supply dozens of bloat attributes (`felt`, `cdi`, `mmi`, `dmin`, `rms`, `nst`, `sources`, etc.).
+  * In the transition to Staging, **all unnecessary fields are eliminated immediately**. We only store the 7 essential business attributes:
+    `event_id`, `event_time`, `latitude`, `longitude`, `depth`, `magnitude`, `place`, `status`.
 * **Transformations & Gateway 1 Validation:**
-  * Structural schema verification (all expected keys present).
-  * Data type coercion (numeric casting, boolean status, ISO-8601 timestamp parsing).
-  * Records failing schema/types are diverted to `quarantine.rejected_events` with error codes `ERR_SCHEMA_CORRUPT` or `ERR_TYPE_CONVERSION`.
+  * Structural schema verification (all 7 core keys present and valid).
+  * Data type coercion (numeric casting, ISO-8601 timestamp parsing).
+  * Records with sensor read errors are routed to the **Sensor Diagnostics & Telemetry** module with code `ERR_SENSOR_PAYLOAD_CORRUPT`.
 
 ### 3.3 Curated Layer (Gold)
 * **Storage Location:** PostgreSQL table `curated.seismic_events` (and analytical Parquet snapshots).
@@ -126,20 +130,20 @@ flowchart TD
   );
   ```
 
-### 3.4 Lateral Quarantine Branch (Dead-Letter Store)
-Quarantine is **not a sequential pipeline stage**; it is an audit-ready side branch for failed records.
+### 3.4 Operational Feature: Sensor Diagnostics & Telemetry (Operator View)
+Rather than a passive quarantine, this serves as an active **operational monitoring feature** for the technical team to observe sensor health, detect physical sensor anomalies, and diagnose calibration drifts in real time.
 * **Schema:**
   ```sql
-  CREATE TABLE quarantine.rejected_events (
-      rejection_id BIGSERIAL PRIMARY KEY,
-      source_id VARCHAR(64),
-      original_payload JSONB NOT NULL,
-      failed_rule_code VARCHAR(64) NOT NULL,
-      failed_rule_desc TEXT NOT NULL,
-      pipeline_stage VARCHAR(32) NOT NULL, -- 'RAW_TO_STAGING' or 'STAGING_TO_CURATED'
+  CREATE TABLE diagnostics.sensor_anomalies (
+      diagnostic_id BIGSERIAL PRIMARY KEY,
+      sensor_id VARCHAR(64),
+      raw_reading JSONB,
+      issue_code VARCHAR(64) NOT NULL,
+      diagnostic_message TEXT NOT NULL,
+      pipeline_stage VARCHAR(32) NOT NULL,
       run_id VARCHAR(64) NOT NULL,
-      rejected_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-      resolution_status VARCHAR(32) NOT NULL DEFAULT 'PENDING' -- 'PENDING', 'RESOLVED', 'DISCARDED'
+      detected_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+      sensor_status VARCHAR(32) NOT NULL DEFAULT 'NEEDS_CHECK' -- 'NEEDS_CHECK', 'RESOLVED'
   );
   ```
 

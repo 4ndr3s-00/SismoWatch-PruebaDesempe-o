@@ -60,8 +60,8 @@ data/lakehouse/staging/*
 !data/lakehouse/staging/.gitkeep
 data/lakehouse/curated/*
 !data/lakehouse/curated/.gitkeep
-data/lakehouse/quarantine/*
-!data/lakehouse/quarantine/.gitkeep
+data/lakehouse/diagnostics/*
+!data/lakehouse/diagnostics/.gitkeep
 
 # Operating System & IDEs
 .DS_Store

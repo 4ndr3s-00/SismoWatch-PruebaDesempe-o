@@ -7,7 +7,7 @@
 CREATE SCHEMA IF NOT EXISTS raw;
 CREATE SCHEMA IF NOT EXISTS staging;
 CREATE SCHEMA IF NOT EXISTS curated;
-CREATE SCHEMA IF NOT EXISTS quarantine;
+CREATE SCHEMA IF NOT EXISTS diagnostics;
 CREATE SCHEMA IF NOT EXISTS audit;
 
 -- 2. Raw Layer (Bronze): Inmutable Append-Only
@@ -69,21 +69,22 @@ CREATE INDEX IF NOT EXISTS idx_curated_time_mag ON curated.seismic_events(event_
 CREATE INDEX IF NOT EXISTS idx_curated_geo ON curated.seismic_events(latitude, longitude);
 CREATE INDEX IF NOT EXISTS idx_curated_updated_at ON curated.seismic_events(updated_at ASC);
 
--- 5. Lateral Quarantine Branch (Dead-Letter Store)
-CREATE TABLE IF NOT EXISTS quarantine.rejected_events (
-    rejection_id BIGSERIAL PRIMARY KEY,
-    source_id VARCHAR(64),
-    original_payload JSONB NOT NULL,
-    failed_rule_code VARCHAR(64) NOT NULL,
-    failed_rule_desc TEXT NOT NULL,
-    pipeline_stage VARCHAR(32) NOT NULL, -- 'RAW_TO_STAGING' or 'STAGING_TO_CURATED'
+-- 5. Sensor Diagnostics & Telemetry (Operator View for Sensor Health)
+-- If a sensor emits an anomalous reading, it is registered here for technical inspection
+CREATE TABLE IF NOT EXISTS diagnostics.sensor_anomalies (
+    diagnostic_id BIGSERIAL PRIMARY KEY,
+    sensor_id VARCHAR(64),
+    raw_reading JSONB,
+    issue_code VARCHAR(64) NOT NULL, -- e.g., 'CALIBRATION_RANGE_EXCEEDED', 'CORRUPT_PAYLOAD'
+    diagnostic_message TEXT NOT NULL,
+    pipeline_stage VARCHAR(32) NOT NULL,
     run_id VARCHAR(64) NOT NULL,
-    rejected_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    resolution_status VARCHAR(32) NOT NULL DEFAULT 'PENDING'
+    detected_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    sensor_status VARCHAR(32) NOT NULL DEFAULT 'NEEDS_CHECK' -- 'NEEDS_CHECK', 'RESOLVED'
 );
 
-CREATE INDEX IF NOT EXISTS idx_quarantine_stage_code ON quarantine.rejected_events(pipeline_stage, failed_rule_code);
-CREATE INDEX IF NOT EXISTS idx_quarantine_run_id ON quarantine.rejected_events(run_id);
+CREATE INDEX IF NOT EXISTS idx_diagnostics_issue ON diagnostics.sensor_anomalies(issue_code);
+CREATE INDEX IF NOT EXISTS idx_diagnostics_sensor ON diagnostics.sensor_anomalies(sensor_id);
 
 -- 6. Audit & Quality Metrics Table
 CREATE TABLE IF NOT EXISTS audit.metrics_execution (
@@ -93,7 +94,7 @@ CREATE TABLE IF NOT EXISTS audit.metrics_execution (
     records_ingested INT NOT NULL DEFAULT 0,
     records_staged INT NOT NULL DEFAULT 0,
     records_curated INT NOT NULL DEFAULT 0,
-    records_quarantined INT NOT NULL DEFAULT 0,
+    sensor_alerts_count INT NOT NULL DEFAULT 0,
     quality_score NUMERIC(5, 2) NOT NULL DEFAULT 100.00,
     processing_latency_seconds NUMERIC(8, 2) NOT NULL DEFAULT 0.00,
     sla_met BOOLEAN NOT NULL DEFAULT TRUE
@@ -149,8 +150,8 @@ GRANT USAGE ON SCHEMA curated TO app_curated_reader;
 GRANT SELECT ON ALL TABLES IN SCHEMA curated TO app_curated_reader;
 ALTER DEFAULT PRIVILEGES IN SCHEMA curated GRANT SELECT ON TABLES TO app_curated_reader;
 
--- Explicitly revoke access to raw, staging and quarantine schemas
+-- Explicitly revoke access to raw, staging and diagnostics schemas
 REVOKE ALL ON SCHEMA raw FROM app_curated_reader;
 REVOKE ALL ON SCHEMA staging FROM app_curated_reader;
-REVOKE ALL ON SCHEMA quarantine FROM app_curated_reader;
+REVOKE ALL ON SCHEMA diagnostics FROM app_curated_reader;
 REVOKE ALL ON SCHEMA audit FROM app_curated_reader;
