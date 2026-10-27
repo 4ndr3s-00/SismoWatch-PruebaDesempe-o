@@ -100,6 +100,7 @@ class OllamaClient:
             "- Si el usuario pide sismos 'menores a X', 'inferiores a X', o 'menor o igual a X': max_mag = X, min_mag = null.\n"
             "- Si el usuario pide sismos 'mayores a X', 'superiores a X', o 'mayor o igual a X': min_mag = X, max_mag = null.\n"
             "- Si el usuario pide 'entre X e Y': min_mag = menor valor, max_mag = mayor valor.\n"
+            "- Si el usuario pide ver todos los datos, la lista completa, mostrar todo o cuántos hay en total: intent = 'SHOW_ALL_EVENTS', filtros = null.\n"
             "- Si el usuario pregunta por 'el más fuerte' o 'mayor magnitud': target = 'MAX_MAGNITUDE'.\n"
             "- Si el usuario pregunta por 'el más leve' o 'menor magnitud': target = 'MIN_MAGNITUDE'.\n\n"
             "Ejemplos:\n"
@@ -107,6 +108,8 @@ class OllamaClient:
             'Respuesta: {"place_contains": "Colombia", "place_excludes": null, "min_mag": null, "max_mag": 4.3, "target": null, "intent": "FILTER_QUERY"}\n\n'
             "Consulta: 'sismos mayores a 5.0 fuera de Colombia'\n"
             'Respuesta: {"place_contains": null, "place_excludes": "Colombia", "min_mag": 5.0, "max_mag": null, "target": null, "intent": "FILTER_QUERY"}\n\n'
+            "Consulta: 'Muéstrame todos los datos y la lista completa'\n"
+            'Respuesta: {"place_contains": null, "place_excludes": null, "min_mag": null, "max_mag": null, "target": null, "intent": "SHOW_ALL_EVENTS"}\n\n'
             "Esquema JSON obligatorio:\n"
             "{\n"
             '  "place_contains": string o null,\n'
@@ -114,7 +117,7 @@ class OllamaClient:
             '  "min_mag": float o null,\n'
             '  "max_mag": float o null,\n'
             '  "target": string o null,\n'
-            '  "intent": "FILTER_QUERY" | "ALL_EVENTS" | "SUPERLATIVE" | "EXECUTIVE_SUMMARY"\n'
+            '  "intent": "FILTER_QUERY" | "SHOW_ALL_EVENTS" | "SUPERLATIVE" | "EXECUTIVE_SUMMARY"\n'
             "}"
         )
 
@@ -137,6 +140,34 @@ class OllamaClient:
 
         try:
             parsed = json.loads(clean)
+            q_low = user_query.lower()
+
+            # Multi-turn context carryover for place if query references previous turn
+            if any(ref in q_low for ref in ["de esos", "de ellos", "allí", "alli", "en esa", "de esas"]) and context:
+                if not parsed.get("place_contains"):
+                    parsed["place_contains"] = context.get("last_place_contains") or context.get("place_contains")
+                if not parsed.get("place_excludes"):
+                    parsed["place_excludes"] = context.get("last_place_excludes") or context.get("place_excludes")
+
+            # Semantic reconciliation for lower/upper bound linguistic confusion
+            # If query indicates 'less than / under' and LLM set min_mag, reconcile to max_mag
+            if any(w in q_low for w in ["menor", "inferior", "menos", "debajo", "máximo", "maximo", "<="]):
+                if parsed.get("min_mag") is not None and parsed.get("max_mag") is None:
+                    parsed["max_mag"] = parsed.pop("min_mag")
+
+            # Vice-versa: if query indicates 'greater than / above' and LLM set max_mag, reconcile to min_mag
+            if any(w in q_low for w in ["mayor", "superior", "más", "mas", "arriba", "mínimo", "minimo", ">="]):
+                if parsed.get("max_mag") is not None and parsed.get("min_mag") is None:
+                    parsed["min_mag"] = parsed.pop("max_mag")
+
+            # Explicit detection for SHOW_ALL_EVENTS if asking for all records or overall count
+            if any(p in q_low for p in ["todos los datos", "todos los sismos", "muestrame todos", "muéstrame todos", "lista completa", "ver todos", "mostrar todo", "cuántos sismos hay", "cuantos sismos hay", "cuántos sismos registrados", "cuantos sismos registrados"]):
+                parsed["intent"] = "SHOW_ALL_EVENTS"
+                parsed["place_contains"] = None
+                parsed["place_excludes"] = None
+                parsed["min_mag"] = None
+                parsed["max_mag"] = None
+
             return parsed
         except Exception as e:
             logger.debug(f"Failed to parse LLM JSON output: {clean} - {e}")

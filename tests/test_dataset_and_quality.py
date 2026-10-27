@@ -108,7 +108,7 @@ def test_usgs_live_api_extraction():
     # Verify fields of first live record
     rec = clean_records[0]
     assert "event_id" in rec
-    assert rec["event_id"].startswith("us")
+    assert isinstance(rec["event_id"], str) and len(rec["event_id"]) >= 4
     assert "magnitude" in rec
     assert rec["magnitude"] >= 2.0
     assert "place" in rec

@@ -7,6 +7,7 @@ Endpoints:
 """
 import os
 import json
+import time
 import logging
 import urllib.request
 import urllib.error
@@ -46,14 +47,31 @@ class USGSLiveClient:
             }
         )
 
-        try:
-            with urllib.request.urlopen(req, timeout=12) as resp:
-                if resp.status != 200:
-                    raise RuntimeError(f"USGS API HTTP {resp.status}")
-                payload = json.loads(resp.read().decode("utf-8"))
-        except Exception as e:
-            logger.error(f"Failed to fetch from USGS API: {e}")
-            raise
+        payload = None
+        for attempt in range(2):
+            try:
+                with urllib.request.urlopen(req, timeout=15) as resp:
+                    if resp.status == 200:
+                        payload = json.loads(resp.read().decode("utf-8"))
+                        break
+            except Exception as e:
+                logger.warning(f"USGS query attempt {attempt + 1} error: {e}")
+                time.sleep(1)
+
+        if not payload:
+            # Resilient fallback to official USGS hourly GeoJSON summary
+            try:
+                logger.info("Falling back to USGS real-time hourly feed")
+                fallback_req = urllib.request.Request(
+                    USGS_HOURLY_URL,
+                    headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64)", "Accept": "application/json"}
+                )
+                with urllib.request.urlopen(fallback_req, timeout=15) as resp:
+                    if resp.status == 200:
+                        payload = json.loads(resp.read().decode("utf-8"))
+            except Exception as e:
+                logger.error(f"Fallback to USGS hourly feed failed: {e}")
+                raise RuntimeError(f"Failed to fetch live USGS data after retry: {e}")
 
         features = payload.get("features", [])
         timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")

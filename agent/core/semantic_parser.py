@@ -99,18 +99,24 @@ class SeismologicalNLU:
         min_mag = None
         max_mag = None
 
-        # Pattern: mayor a X / superior a X / más de X / > X
-        m_greater = re.search(r"(?:mayor|superior|m[aá]s|arriba)\s*(?:a|de|que)?\s*(?:magnitud)?\s*([0-9]+(?:\.[0-9]+)?)", q)
-        if m_greater:
+        # Pattern: mayor a X / superior a X / más de X / mayor o igual a X / >= X / mínimo X
+        m_greater = re.search(
+            r"(?:mayor|superior|m[aá]s|arriba|m[ií]nimo|desde)?\s*(?:o\s*igual\s*(?:a|que))?\s*(?:a|de|que)?\s*(?:magnitud)?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:m|grados)?",
+            q
+        )
+        if m_greater and any(w in q for w in ["mayor", "superior", "m[aá]s", "mínimo", "minimo", "desde", ">="]):
             min_mag = float(m_greater.group(1))
 
-        # Pattern: menor a X / inferior a X / menos de X / < X
-        m_less = re.search(r"(?:menor|inferior|menos|debajo)\s*(?:a|de|que)?\s*(?:magnitud)?\s*([0-9]+(?:\.[0-9]+)?)", q)
-        if m_less:
+        # Pattern: menor a X / inferior a X / menos de X / menor o igual a X / <= X / máximo X
+        m_less = re.search(
+            r"(?:menor|inferior|menos|debajo|m[aá]ximo|hasta)?\s*(?:o\s*igual\s*(?:a|que))?\s*(?:a|de|que)?\s*(?:magnitud)?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:m|grados)?",
+            q
+        )
+        if m_less and any(w in q for w in ["menor", "inferior", "menos", "debajo", "máximo", "maximo", "hasta", "<="]):
             max_mag = float(m_less.group(1))
 
         # Pattern: entre X y Y
-        m_range = re.search(r"entre\s*([0-9]+(?:\.[0-9]+)?)\s*y\s*([0-9]+(?:\.[0-9]+)?)", q)
+        m_range = re.search(r"entre\s*([0-9]+(?:\.[0-9]+)?)\s*(?:m|grados)?\s*y\s*([0-9]+(?:\.[0-9]+)?)\s*(?:m|grados)?", q)
         if m_range:
             min_mag = float(m_range.group(1))
             max_mag = float(m_range.group(2))
@@ -156,11 +162,13 @@ class SeismologicalNLU:
 
         # 7. Multi-Turn Context Carryover:
         # If user says "y de esos cuál fue el más fuerte?" carry over place filter from context
-        if any(ref in q for ref in ["de esos", "de ellos", "en esa regi[oó]n", "all[ií]"]):
-            if context.get("last_place_contains") and not place_contains:
-                place_contains = context["last_place_contains"]
-            if context.get("last_place_excludes") and not place_excludes:
-                place_excludes = context["last_place_excludes"]
+        if any(ref in q for ref in ["de esos", "de ellos", "en esa regi[oó]n", "all[ií]", "de esas"]):
+            cand_contains = context.get("last_place_contains") or context.get("place_contains")
+            cand_excludes = context.get("last_place_excludes") or context.get("place_excludes")
+            if cand_contains and not place_contains:
+                place_contains = cand_contains
+            if cand_excludes and not place_excludes:
+                place_excludes = cand_excludes
 
         filters = {}
         if min_mag is not None:
