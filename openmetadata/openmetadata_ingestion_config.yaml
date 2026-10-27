@@ -1,0 +1,63 @@
+# ==============================================================================
+# OpenMetadata Ingestion Pipeline Configuration for SismoWatch
+# Orchestrates metadata extraction, schema cataloging, and lineage registration
+# ==============================================================================
+
+source:
+  type: postgres
+  serviceName: sismowatch_postgres_service
+  serviceConnection:
+    config:
+      type: Postgres
+      scheme: postgresql+psycopg2
+      username: ${POSTGRES_USER:-sismowatch_admin}
+      password: ${POSTGRES_PASSWORD:-SismoWatchSecretPassword2026!}
+      hostPort: ${POSTGRES_HOST:-postgres}:${POSTGRES_PORT:-5432}
+      database: ${POSTGRES_DB:-sismowatch_db}
+  sourceConfig:
+    config:
+      type: DatabaseMetadata
+      schemaFilterPattern:
+        includes:
+          - raw
+          - staging
+          - curated
+          - diagnostics
+      markDeletedTables: false
+      includeTables: true
+      includeViews: false
+
+lineage:
+  type: airflow-lineage
+  serviceName: sismowatch_airflow
+  pipelineName: sismowatch_medallion_pipeline
+  lineageSource:
+    - upstream: sismowatch_postgres_service.sismowatch_db.raw.seismic_events_raw
+      downstream: sismowatch_postgres_service.sismowatch_db.staging.seismic_events
+    - upstream: sismowatch_postgres_service.sismowatch_db.staging.seismic_events
+      downstream: sismowatch_postgres_service.sismowatch_db.curated.seismic_events
+    - upstream: sismowatch_postgres_service.sismowatch_db.staging.seismic_events
+      downstream: sismowatch_postgres_service.sismowatch_db.diagnostics.sensor_anomalies
+
+dataQuality:
+  testSuite: SismoWatch_Curated_Quality_Suite
+  targetTable: sismowatch_postgres_service.sismowatch_db.curated.seismic_events
+  tests:
+    - testDefinition: tableRowCountToEqual
+      value: 20
+    - testDefinition: columnValuesToBeBetween
+      column: magnitude
+      min: -1.0
+      max: 10.0
+    - testDefinition: columnValuesToBeGreaterThanOrEqualTo
+      column: depth
+      min: 0.0
+
+sink:
+  type: metadata-rest
+  config:
+    openMetadataServerConnection:
+      hostPort: http://localhost:8585/api
+      authProvider: openmetadata
+      securityConfig:
+        jwtToken: ${OPENMETADATA_JWT_TOKEN:-}
