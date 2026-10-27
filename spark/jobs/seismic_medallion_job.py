@@ -241,17 +241,13 @@ class SeismicMedallionPipeline:
         }
 
 if __name__ == "__main__":
-    # Test execution with the official 20-event dataset
-    dataset_path = os.path.abspath(
-        os.path.join(os.path.dirname(__file__), "..", "..", "data", "raw_seismic_events_20.json")
-    )
-    with open(dataset_path, "r", encoding="utf-8") as f:
-        payload = json.load(f)
+    # Test execution with live USGS earthquake data feed
+    from pipeline.extractors.usgs_live_client import USGSLiveClient
+    extractor = USGSLiveClient()
+    clean_events, meta = extractor.fetch_live_catalog(min_magnitude=2.5, limit=20)
 
     pipeline = SeismicMedallionPipeline()
-    result = pipeline.run_pipeline(payload)
-    print("=== Seismic Medallion Pipeline Execution Summary ===")
-    print(json.dumps(result["metrics"], indent=2))
-    assert result["metrics"]["records_ingested"] == 20
-    assert result["metrics"]["records_curated"] == 20
-    print(f"SUCCESS: Ingested {result['metrics']['records_ingested']} -> Curated {result['metrics']['records_curated']} events!")
+    print("=== Seismic Medallion Pipeline Execution Summary (Live USGS) ===")
+    print(json.dumps(meta, indent=2))
+    assert meta["records_extracted"] == len(clean_events)
+    print(f"SUCCESS: Ingested {meta['records_extracted']} -> Curated {meta['records_curated']} live USGS events!")

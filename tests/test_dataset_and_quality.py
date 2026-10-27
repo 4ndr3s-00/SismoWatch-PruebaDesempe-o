@@ -93,3 +93,23 @@ def test_sensor_diagnostic_detection_on_anomalous_events():
     assert alert_2["sensor_id"] == "sensor_err_02"
     assert alert_2["sensor_status"] == "NEEDS_CHECK"
     assert alert_2["issue_code"] in ["ERR_SENSOR_CALIBRATION_MAGNITUDE", "ERR_SENSOR_GEOGRAPHIC_BOUNDS"]
+
+def test_usgs_live_api_extraction():
+    """Verify live, unsimulated seismic event extraction from official USGS API."""
+    from pipeline.extractors.usgs_live_client import USGSLiveClient
+    client = USGSLiveClient()
+    clean_records, meta = client.fetch_live_catalog(min_magnitude=2.5, limit=20)
+
+    assert meta["source"] == "USGS_LIVE_API"
+    assert meta["records_extracted"] == len(clean_records)
+    assert len(clean_records) == 20
+    assert meta["quality_score"] == 100.0
+
+    # Verify fields of first live record
+    rec = clean_records[0]
+    assert "event_id" in rec
+    assert rec["event_id"].startswith("us")
+    assert "magnitude" in rec
+    assert rec["magnitude"] >= 2.0
+    assert "place" in rec
+    assert "event_time" in rec

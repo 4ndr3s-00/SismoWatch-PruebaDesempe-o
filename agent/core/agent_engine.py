@@ -26,6 +26,11 @@ class SismoWatchAgent:
             "turn_count": 0
         }
 
+    @property
+    def db(self) -> CuratedDataClient:
+        """Alias for db_client."""
+        return self.db_client
+
     def ask(self, user_query: str) -> Dict[str, Any]:
         """
         Main query entrypoint.

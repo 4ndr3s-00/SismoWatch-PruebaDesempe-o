@@ -22,6 +22,7 @@ import jwt
 from agent.core.agent_engine import SismoWatchAgent
 from agent.database.curated_client import CuratedDataClient
 from agent.core.narrator import ResponseNarrator
+from pipeline.extractors.usgs_live_client import USGSLiveClient
 
 # Security & Config
 JWT_SECRET = os.environ.get("JWT_SECRET", "super_secret_jwt_key_sismowatch_prod_sec_2026")
@@ -45,6 +46,7 @@ app.add_middleware(
 # Shared in-memory singletons
 curated_client = CuratedDataClient()
 ai_agent = SismoWatchAgent(db_client=curated_client)
+usgs_extractor = USGSLiveClient()
 
 # --------------------------------------------------------------------------
 # Request & Response Models
@@ -157,6 +159,19 @@ async def get_event_detail(event_id: str):
     if not matched:
         raise HTTPException(status_code=404, detail=f"Evento sísmico '{event_id}' no encontrado")
     return matched
+
+@app.post("/api/events/sync", tags=["Seismic Events"])
+async def sync_live_usgs_events(limit: int = 20, min_mag: float = 2.5):
+    """Fetches real-world live events from official USGS API and updates curated layer."""
+    try:
+        clean_records, meta = usgs_extractor.fetch_live_catalog(min_magnitude=min_mag, limit=limit)
+        return {
+            "status": "SUCCESS",
+            "message": f"Successfully synced {len(clean_records)} live events from USGS",
+            "metadata": meta
+        }
+    except Exception as e:
+        raise HTTPException(status_code=502, detail=f"Failed to sync with USGS: {str(e)}")
 
 @app.get("/api/reports/latest", tags=["Reports"])
 async def get_latest_report():

@@ -87,7 +87,7 @@ DEFAULT_ARGS = {
 }
 
 DAG_PARAMS = {
-    "mode": Param("local_test_20", enum=["local_test_20", "live_api"], description="Source mode: official 20 events or live USGS API"),
+    "mode": Param("live_api", enum=["live_api", "local_test_20"], description="Source mode: live USGS API or fallback"),
     "limit": Param(20, type="integer", description="Number of events to fetch"),
     "start_date": Param("2026-09-27", type="string", description="Start date for 30-day backfill (YYYY-MM-DD)"),
     "end_date": Param("2026-10-27", type="string", description="End date for backfill (YYYY-MM-DD)")
@@ -99,11 +99,11 @@ DAG_PARAMS = {
 @task(task_id="extract_seismic_data")
 def extract_seismic_data(**kwargs) -> dict:
     """
-    Extracts seismic data from live USGS API or local 20-event dataset.
+    Extracts real seismic data from live USGS API.
     Saves to lakehouse and passes metadata reference only (Zero Large XComs).
     """
     params = kwargs.get("params", {})
-    mode = params.get("mode", "local_test_20")
+    mode = params.get("mode", "live_api")
     limit = int(params.get("limit", 20))
     run_id = kwargs.get("run_id", f"run_{datetime.now(timezone.utc).strftime('%Y%m%d_%H%M%S')}")
 
