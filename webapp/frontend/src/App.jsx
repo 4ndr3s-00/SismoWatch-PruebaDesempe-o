@@ -15,28 +15,28 @@ import {
 } from 'lucide-react';
 import L from 'leaflet';
 
-// Initial verified fallback dataset of 20 events (guarantees zero empty state)
+// Initial verified live USGS dataset (guarantees zero empty state)
 const INITIAL_20_EVENTS = [
-  {"event_id":"us7000col16","event_time":"2024-10-16T08:06:40+00:00","latitude":-15.82,"longitude":-74.45,"depth":28.0,"magnitude":6.4,"place":"Southern Peru Region","status":"reviewed"},
-  {"event_id":"us7000col05","event_time":"2024-10-15T21:06:40+00:00","latitude":0.98,"longitude":-79.82,"depth":18.0,"magnitude":6.1,"place":"Off the coast of Esmeraldas, Ecuador","status":"reviewed"},
-  {"event_id":"us7000col09","event_time":"2024-10-16T01:06:40+00:00","latitude":-21.45,"longitude":-70.35,"depth":42.6,"magnitude":5.7,"place":"Near the coast of Northern Chile","status":"reviewed"},
-  {"event_id":"us7000col03","event_time":"2024-10-15T19:06:40+00:00","latitude":1.65,"longitude":-78.98,"depth":35.0,"magnitude":5.2,"place":"32 km WSW of Tumaco, Nariño, Colombia","status":"reviewed"},
-  {"event_id":"us7000col14","event_time":"2024-10-16T06:06:40+00:00","latitude":0.54,"longitude":-34.22,"depth":10.0,"magnitude":5.0,"place":"Central Mid-Atlantic Ridge","status":"reviewed"},
-  {"event_id":"us7000col20","event_time":"2024-10-16T12:06:40+00:00","latitude":14.89,"longitude":-93.78,"depth":45.0,"magnitude":4.9,"place":"Near the coast of Chiapas, Mexico","status":"reviewed"},
-  {"event_id":"us7000col11","event_time":"2024-10-16T03:06:40+00:00","latitude":7.89,"longitude":-82.86,"depth":14.0,"magnitude":4.8,"place":"45 km S of Puerto Armuelles, Panama","status":"reviewed"},
-  {"event_id":"us7000col01","event_time":"2024-10-15T17:06:40+00:00","latitude":6.78,"longitude":-73.12,"depth":148.5,"magnitude":4.5,"place":"14 km E of Mesa de Los Santos, Colombia","status":"reviewed"},
-  {"event_id":"us7000col18","event_time":"2024-10-16T10:06:40+00:00","latitude":7.38,"longitude":-75.61,"depth":31.5,"magnitude":4.3,"place":"28 km NW of Valdivia, Antioquia, Colombia","status":"reviewed"},
-  {"event_id":"us7000col07","event_time":"2024-10-15T23:06:40+00:00","latitude":5.14,"longitude":-72.61,"depth":8.2,"magnitude":4.1,"place":"21 km NE of Tauramena, Casanare, Colombia","status":"reviewed"},
-  {"event_id":"us7000col13","event_time":"2024-10-16T05:06:40+00:00","latitude":4.45,"longitude":-73.61,"depth":9.8,"magnitude":3.9,"place":"15 km NE of El Calvario, Meta, Colombia","status":"reviewed"},
-  {"event_id":"us7000col02","event_time":"2024-10-15T18:06:40+00:00","latitude":7.01,"longitude":-76.32,"depth":24.2,"magnitude":3.8,"place":"8 km SW of Dabeiba, Antioquia, Colombia","status":"reviewed"},
-  {"event_id":"us7000col15","event_time":"2024-10-16T07:06:40+00:00","latitude":5.34,"longitude":-73.81,"depth":145.0,"magnitude":3.6,"place":"11 km WNW of Lenguazaque, Cundinamarca, Colombia","status":"reviewed"},
-  {"event_id":"us7000col06","event_time":"2024-10-15T22:06:40+00:00","latitude":6.94,"longitude":-76.68,"depth":15.4,"magnitude":3.4,"place":"12 km SE of Murindó, Antioquia, Colombia","status":"reviewed"},
-  {"event_id":"us7000col19","event_time":"2024-10-16T11:06:40+00:00","latitude":8.42,"longitude":-71.55,"depth":12.3,"magnitude":3.3,"place":"16 km S of Urao, Merida, Venezuela","status":"reviewed"},
-  {"event_id":"us7000col10","event_time":"2024-10-16T02:06:40+00:00","latitude":8.04,"longitude":-72.63,"depth":110.2,"magnitude":3.1,"place":"18 km NW of Cucuta, Norte de Santander, Colombia","status":"reviewed"},
-  {"event_id":"us7000col04","event_time":"2024-10-15T20:06:40+00:00","latitude":6.86,"longitude":-73.27,"depth":132.0,"magnitude":2.9,"place":"5 km N of Zapatoca, Santander, Colombia","status":"reviewed"},
-  {"event_id":"us7000col17","event_time":"2024-10-16T09:06:40+00:00","latitude":6.74,"longitude":-73.06,"depth":138.4,"magnitude":2.7,"place":"4 km ENE of Jordan, Santander, Colombia","status":"reviewed"},
-  {"event_id":"us7000col08","event_time":"2024-10-16T00:06:40+00:00","latitude":6.75,"longitude":-73.11,"depth":142.1,"magnitude":2.5,"place":"3 km S of Los Santos, Santander, Colombia","status":"reviewed"},
-  {"event_id":"us7000col12","event_time":"2024-10-16T04:06:40+00:00","latitude":6.91,"longitude":-73.34,"depth":126.8,"magnitude":2.2,"place":"6 km W of Betulia, Santander, Colombia","status":"reviewed"}
+  {"event_id":"tx2026vdzxac","event_time":"2026-10-27T15:01:21.173000+00:00","latitude":31.629,"longitude":-104.307,"depth":5.43,"magnitude":2.5,"place":"59 km NW of Toyah, Texas","status":"reviewed"},
+  {"event_id":"us7000ttgf","event_time":"2026-10-27T14:44:00.933000+00:00","latitude":-9.1162,"longitude":110.3305,"depth":10.0,"magnitude":5.4,"place":"128 km S of Pundong, Indonesia","status":"reviewed"},
+  {"event_id":"us7000ttgh","event_time":"2026-10-27T14:43:09.497000+00:00","latitude":-9.3662,"longitude":110.2973,"depth":20.61,"magnitude":4.9,"place":"156 km S of Pundong, Indonesia","status":"reviewed"},
+  {"event_id":"us7000ttg9","event_time":"2026-10-27T12:52:52.994000+00:00","latitude":-38.3668,"longitude":145.8855,"depth":10.0,"magnitude":3.5,"place":"9 km NE of Korumburra, Australia","status":"reviewed"},
+  {"event_id":"us7000ttfx","event_time":"2026-10-27T12:01:11.952000+00:00","latitude":16.3977,"longitude":-93.817,"depth":140.34,"magnitude":4.6,"place":"5 km ENE of Tierra y Libertad, Mexico","status":"reviewed"},
+  {"event_id":"us7000ttft","event_time":"2026-10-27T11:46:27.896000+00:00","latitude":28.8981,"longitude":-98.9589,"depth":9.62,"magnitude":2.5,"place":"13 km E of Pearsall, Texas","status":"reviewed"},
+  {"event_id":"us7000ttfs","event_time":"2026-10-27T11:41:22.141000+00:00","latitude":-23.1819,"longitude":-66.6616,"depth":206.26,"magnitude":4.6,"place":"100 km W of El Aguilar, Argentina","status":"reviewed"},
+  {"event_id":"pr71537738","event_time":"2026-10-27T11:10:56.030000+00:00","latitude":18.6178,"longitude":-64.9427,"depth":26.66,"magnitude":3.05,"place":"30 km N of Charlotte Amalie, U.S. Virgin Islands","status":"reviewed"},
+  {"event_id":"us7000ttfk","event_time":"2026-10-27T10:50:35.418000+00:00","latitude":-14.0067,"longitude":165.6479,"depth":10.0,"magnitude":5.2,"place":"191 km NW of Port-Olry, Vanuatu","status":"reviewed"},
+  {"event_id":"us7000ttfj","event_time":"2026-10-27T10:06:31.916000+00:00","latitude":-13.9437,"longitude":165.7876,"depth":10.0,"magnitude":5.0,"place":"184 km NW of Port-Olry, Vanuatu","status":"reviewed"},
+  {"event_id":"us7000ttfe","event_time":"2026-10-27T09:20:55.730000+00:00","latitude":-13.9006,"longitude":165.5556,"depth":10.0,"magnitude":5.0,"place":"206 km NW of Port-Olry, Vanuatu","status":"reviewed"},
+  {"event_id":"pr71537733","event_time":"2026-10-27T09:14:54.360000+00:00","latitude":18.8815,"longitude":-64.5878,"depth":35.73,"magnitude":2.78,"place":"64 km NNE of Cruz Bay, U.S. Virgin Islands","status":"reviewed"},
+  {"event_id":"us7000ttfc","event_time":"2026-10-27T09:07:45.122000+00:00","latitude":-15.1739,"longitude":-173.4094,"depth":10.0,"magnitude":5.0,"place":"95 km NNE of Hihifo, Tonga","status":"reviewed"},
+  {"event_id":"us7000ttfb","event_time":"2026-10-27T08:55:23.290000+00:00","latitude":-13.9141,"longitude":165.6671,"depth":11.0,"magnitude":5.8,"place":"196 km NW of Port-Olry, Vanuatu","status":"reviewed"},
+  {"event_id":"us7000ttf9","event_time":"2026-10-27T08:49:43.629000+00:00","latitude":56.9515,"longitude":-148.3552,"depth":10.0,"magnitude":2.8,"place":"247 km ESE of Chiniak, Alaska","status":"reviewed"},
+  {"event_id":"aka2026vgtzgj","event_time":"2026-10-27T06:42:50.318000+00:00","latitude":56.216,"longitude":-157.11,"depth":18.5,"magnitude":2.5,"place":"80 km E of Chignik, Alaska","status":"automatic"},
+  {"event_id":"us7000tteg","event_time":"2026-10-27T03:55:23.686000+00:00","latitude":-2.7707,"longitude":-78.8864,"depth":75.45,"magnitude":4.1,"place":"5 km SW of Azogues, Ecuador","status":"reviewed"},
+  {"event_id":"pr71537723","event_time":"2026-10-27T03:16:33.040000+00:00","latitude":18.8712,"longitude":-65.7982,"depth":36.24,"magnitude":3.04,"place":"49 km N of Suárez, Puerto Rico","status":"reviewed"},
+  {"event_id":"us7000tte4","event_time":"2026-10-27T02:02:55.847000+00:00","latitude":-10.6683,"longitude":161.3189,"depth":35.0,"magnitude":4.9,"place":"69 km WSW of Kirakira, Solomon Islands","status":"reviewed"},
+  {"event_id":"pr71537718","event_time":"2026-10-27T01:56:46.130000+00:00","latitude":18.2008,"longitude":-67.5985,"depth":134.47,"magnitude":3.31,"place":"39 km WSW of Stella, Puerto Rico","status":"reviewed"}
 ];
 
 // Clean Structured Message Formatter (No raw asterisks or backticks, rich interactive cards)
@@ -84,8 +84,8 @@ function FormattedMessage({ text, onSelectLocation }) {
           const depthMatch = trimmed.match(/Profundidad:\s*([0-9.]+\s*km)/i);
           const depth = depthMatch ? depthMatch[1] : '';
 
-          // Extract event_id if present (e.g. us7000col16)
-          const idMatch = trimmed.match(/(us[0-9a-z]+)/i);
+          // Extract event_id if present (e.g. us7000col16, tx2026vdzxac, pr71537718, aka2026vgtzgj)
+          const idMatch = trimmed.match(/((?:us|tx|ak|aka|ci|pr|nc|nn|hv|uu|uw)[0-9a-z]+)/i);
           const eventId = idMatch ? idMatch[1] : '';
 
           // Extract timestamp if present
@@ -491,11 +491,15 @@ export default function App() {
               })}
             </div>
 
-            {/* Bottom Quick Stats */}
+            {/* Bottom Quick Stats (Dynamic from live USGS events) */}
             <div className="pt-2 mt-2 border-t border-white/5 flex items-center justify-between text-[11px] font-mono text-zinc-400 shrink-0">
-              <span>Máx: M 6.4</span>
-              <span>Colombia: 13</span>
-              <span>Total: 20</span>
+              <span>
+                Máx: M {events.length > 0 ? Math.max(...events.map(e => parseFloat(e.magnitude) || 0)).toFixed(1) : '0.0'}
+              </span>
+              <span>
+                Prof. Prom: {events.length > 0 ? (events.reduce((acc, e) => acc + (parseFloat(e.depth) || 0), 0) / events.length).toFixed(0) : '0'} km
+              </span>
+              <span>Total: {events.length}</span>
             </div>
           </div>
 
@@ -514,10 +518,10 @@ export default function App() {
           {/* Quick Suggestions */}
           <div className="flex items-center gap-2 pb-3 mb-2 border-b border-white/5 overflow-x-auto shrink-0 text-xs">
             <button 
-              onClick={() => handleSendMessage('¿Cuáles sismos ocurrieron en Colombia?')}
+              onClick={() => handleSendMessage('¿Cuáles sismos ocurrieron en Indonesia?')}
               className="bg-zinc-950/80 hover:bg-zinc-800 text-zinc-300 border border-white/10 px-2.5 py-1 rounded text-xs transition shrink-0"
             >
-              Sismos en Colombia
+              Sismos en Indonesia
             </button>
             <button 
               onClick={() => handleSendMessage('¿Cuál fue el sismo de mayor magnitud?')}
@@ -529,13 +533,13 @@ export default function App() {
               onClick={() => handleSendMessage('Muéstrame todos los datos')}
               className="bg-zinc-950/80 hover:bg-zinc-800 text-zinc-300 border border-white/10 px-2.5 py-1 rounded text-xs transition shrink-0"
             >
-              Ver los 20 sismos
+              Ver todos los sismos
             </button>
             <button 
-              onClick={() => handleSendMessage('¿Cuáles son los sismos más superficiales?')}
+              onClick={() => handleSendMessage('¿Cuáles sismos fueron menor o igual a 4.5 M?')}
               className="bg-zinc-950/80 hover:bg-zinc-800 text-zinc-300 border border-white/10 px-2.5 py-1 rounded text-xs transition shrink-0"
             >
-              Sismos superficiales
+              Sismos ≤ 4.5 M
             </button>
           </div>
 
