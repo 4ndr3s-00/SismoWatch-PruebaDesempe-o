@@ -247,8 +247,10 @@ async def events_live_stream(request: Request, last_event_id: Optional[str] = He
     return StreamingResponse(event_generator(), media_type="text/event-stream")
 
 # --------------------------------------------------------------------------
-# Mount Static Frontend
+# Mount Static Frontend (Vite Production Build or Raw Static)
 # --------------------------------------------------------------------------
-FRONTEND_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend"))
-if os.path.exists(FRONTEND_DIR):
-    app.mount("/", StaticFiles(directory=FRONTEND_DIR, html=True), name="frontend")
+DIST_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend", "dist"))
+STATIC_DIR = DIST_DIR if os.path.exists(DIST_DIR) else os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "frontend"))
+
+if os.path.exists(STATIC_DIR):
+    app.mount("/", StaticFiles(directory=STATIC_DIR, html=True), name="frontend")
