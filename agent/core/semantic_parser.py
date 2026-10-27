@@ -95,43 +95,68 @@ class SeismologicalNLU:
                 "limit": 1
             }
 
-        # 4. Extract Magnitude Bounds
-        min_mag = None
-        max_mag = None
-
-        # Pattern: mayor a X / superior a X / más de X / mayor o igual a X / >= X / mínimo X
-        m_greater = re.search(
-            r"(?:mayor|superior|m[aá]s|arriba|m[ií]nimo|desde)?\s*(?:o\s*igual\s*(?:a|que))?\s*(?:a|de|que)?\s*(?:magnitud)?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:m|grados)?",
-            q
-        )
-        if m_greater and any(w in q for w in ["mayor", "superior", "m[aá]s", "mínimo", "minimo", "desde", ">="]):
-            min_mag = float(m_greater.group(1))
-
-        # Pattern: menor a X / inferior a X / menos de X / menor o igual a X / <= X / máximo X
-        m_less = re.search(
-            r"(?:menor|inferior|menos|debajo|m[aá]ximo|hasta)?\s*(?:o\s*igual\s*(?:a|que))?\s*(?:a|de|que)?\s*(?:magnitud)?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:m|grados)?",
-            q
-        )
-        if m_less and any(w in q for w in ["menor", "inferior", "menos", "debajo", "máximo", "maximo", "hasta", "<="]):
-            max_mag = float(m_less.group(1))
-
-        # Pattern: entre X y Y
-        m_range = re.search(r"entre\s*([0-9]+(?:\.[0-9]+)?)\s*(?:m|grados)?\s*y\s*([0-9]+(?:\.[0-9]+)?)\s*(?:m|grados)?", q)
-        if m_range:
-            min_mag = float(m_range.group(1))
-            max_mag = float(m_range.group(2))
-
-        # 5. Extract Depth Bounds
+        # 4. Extract Depth Bounds (km / kilómetros / profundidad / cubran)
         min_depth = None
         max_depth = None
+        has_km_unit = any(u in q for u in ["km", "kilómetro", "kilometro", "profund", "cubran"])
+
         if "superficial" in q:
             max_depth = 30.0  # Geological standard for shallow events: < 30 km
         elif "profundo" in q or "hondo" in q:
             min_depth = 70.0  # Intermediate to deep events
 
-        d_less = re.search(r"profundidad\s*(?:menor|inferior|menos)?\s*(?:a|de)?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:km)?", q)
-        if d_less:
+        # Depth range: entre X y Y km
+        d_range = re.search(r"entre\s*([0-9]+(?:\.[0-9]+)?)\s*(?:km|kil[oó]metros)?\s*y\s*([0-9]+(?:\.[0-9]+)?)\s*(?:km|kil[oó]metros)", q)
+        if d_range:
+            v1, v2 = float(d_range.group(1)), float(d_range.group(2))
+            min_depth, max_depth = min(v1, v2), max(v1, v2)
+
+        # Depth greater than: más de X km / mayor a X km / cubran más de X km / profundidad mayor a X
+        d_greater = re.search(r"(?:profundidad|cubran|alcancen)?\s*(?:m[aá]s|mayor|superior)\s*(?:a|de|que)?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:km|kil[oó]metros)?", q)
+        if d_greater and (has_km_unit or "profund" in q or "cubran" in q):
+            min_depth = float(d_greater.group(1))
+
+        # Depth less than: menos de X km / menor a X km / profundidad menor a X
+        d_less = re.search(r"(?:profundidad)?\s*(?:menos|menor|inferior|debajo)\s*(?:a|de|que)?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:km|kil[oó]metros)?", q)
+        if d_less and (has_km_unit or "profund" in q):
             max_depth = float(d_less.group(1))
+
+        # 5. Extract Magnitude Bounds (strictly dimensionless or 'M' / 'grados', max 10.0)
+        min_mag = None
+        max_mag = None
+
+        if not has_km_unit or any(m in q for m in ["magnitud", "grados", "escala"]):
+            # Pattern: mayor a X / superior a X / más de X / mayor o igual a X / >= X / mínimo X
+            m_greater = re.search(
+                r"(?:mayor|superior|m[aá]s|arriba|m[ií]nimo|desde)?\s*(?:o\s*igual\s*(?:a|que))?\s*(?:a|de|que)?\s*(?:magnitud)?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:m|grados)?",
+                q
+            )
+            if m_greater and any(w in q for w in ["mayor", "superior", "m[aá]s", "mínimo", "minimo", "desde", ">="]):
+                val = float(m_greater.group(1))
+                if val <= 10.0:  # Physical limit for terrestrial earthquake magnitude
+                    min_mag = val
+                elif min_depth is None:
+                    min_depth = val
+
+            # Pattern: menor a X / inferior a X / menos de X / menor o igual a X / <= X / máximo X
+            m_less = re.search(
+                r"(?:menor|inferior|menos|debajo|m[aá]ximo|hasta)?\s*(?:o\s*igual\s*(?:a|que))?\s*(?:a|de|que)?\s*(?:magnitud)?\s*([0-9]+(?:\.[0-9]+)?)\s*(?:m|grados)?",
+                q
+            )
+            if m_less and any(w in q for w in ["menor", "inferior", "menos", "debajo", "máximo", "maximo", "hasta", "<="]):
+                val = float(m_less.group(1))
+                if val <= 10.0:
+                    max_mag = val
+                elif max_depth is None:
+                    max_depth = val
+
+            # Pattern: entre X y Y magnitudes
+            m_range = re.search(r"entre\s*([0-9]+(?:\.[0-9]+)?)\s*(?:m|grados)?\s*y\s*([0-9]+(?:\.[0-9]+)?)\s*(?:m|grados)?", q)
+            if m_range and not has_km_unit:
+                v1, v2 = float(m_range.group(1)), float(m_range.group(2))
+                if v1 <= 10.0 and v2 <= 10.0:
+                    min_mag = min(v1, v2)
+                    max_mag = max(v1, v2)
 
         # 6. Extract Geographic Entities & Negation
         place_contains = None

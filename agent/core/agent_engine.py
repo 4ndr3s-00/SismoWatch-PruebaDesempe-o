@@ -100,6 +100,8 @@ class SismoWatchAgent:
                         k: v for k, v in {
                             "min_mag": llm_parsed.get("min_mag"),
                             "max_mag": llm_parsed.get("max_mag"),
+                            "min_depth": llm_parsed.get("min_depth"),
+                            "max_depth": llm_parsed.get("max_depth"),
                             "place_contains": llm_parsed.get("place_contains"),
                             "place_excludes": llm_parsed.get("place_excludes")
                         }.items() if v is not None

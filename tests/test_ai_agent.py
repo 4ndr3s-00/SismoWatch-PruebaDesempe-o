@@ -127,5 +127,19 @@ def test_agent_circuit_breaker_offline_resilience(tmp_path):
     resilient_agent = SismoWatchAgent(db_client=bad_db_client)
 
     result = resilient_agent.ask("¿Cuántos sismos hay registrados?")
-    assert "20 de 20 eventos" in result["response"]
+    total = len(resilient_agent.db._load_from_snapshot())
+    assert f"{total} de {total} eventos" in result["response"]
+    assert "Integridad: 100%" in result["response"]
     assert result["telemetry"]["storage_backend"] == "LAKEHOUSE_SNAPSHOT"
+
+def test_agent_distinguishes_depth_km_from_magnitude(agent):
+    """
+    CRITICAL PHYSICAL INTEGRITY TEST:
+    Verifies that distance/depth queries in km (e.g. 'cubran mas de 200km')
+    are strictly routed to depth, NEVER confused with magnitude.
+    """
+    result = agent.ask("Dame los sismos que cubran mas de 200km")
+    resp = result["response"]
+    assert "profundidad" in resp
+    assert "magnitud superior a 200" not in resp
+    assert result["telemetry"]["records_retrieved"] >= 1

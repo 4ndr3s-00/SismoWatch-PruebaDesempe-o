@@ -95,10 +95,20 @@ class ResponseNarrator:
         # Handle ZERO-RESULTS gracefully
         if count == 0:
             conds = []
-            if "min_mag" in filters:
+            if "min_mag" in filters and "max_mag" in filters:
+                conds.append(f"magnitud entre {filters['min_mag']} y {filters['max_mag']}")
+            elif "min_mag" in filters:
                 conds.append(f"magnitud superior a {filters['min_mag']}")
-            if "max_mag" in filters:
+            elif "max_mag" in filters:
                 conds.append(f"magnitud menor a {filters['max_mag']}")
+
+            if "min_depth" in filters and "max_depth" in filters:
+                conds.append(f"profundidad entre {filters['min_depth']} km y {filters['max_depth']} km")
+            elif "min_depth" in filters:
+                conds.append(f"profundidad superior a {filters['min_depth']} km")
+            elif "max_depth" in filters:
+                conds.append(f"profundidad menor a {filters['max_depth']} km")
+
             if "place_contains" in filters:
                 conds.append(f"en la región '{filters['place_contains']}'")
             if "place_excludes" in filters:
@@ -107,7 +117,7 @@ class ResponseNarrator:
             crit_desc = ", ".join(conds) if conds else "los criterios especificados"
             max_m = summary_stats.get("max_magnitude", 6.4)
             max_ev = summary_stats.get("max_event", {})
-            max_place = max_ev.get("place", "Southern Peru Region")
+            max_place = max_ev.get("place", "Ubicación desconocida")
 
             text = (
                 f"Revisé los {total} eventos de la base de datos y no se encontró ningún sismo con {crit_desc}.\n\n"
@@ -131,6 +141,13 @@ class ResponseNarrator:
             desc_parts.append(f"con magnitud mayor o igual a {filters['min_mag']}")
         elif "max_mag" in filters:
             desc_parts.append(f"con magnitud menor o igual a {filters['max_mag']}")
+
+        if "min_depth" in filters and "max_depth" in filters:
+            desc_parts.append(f"con profundidad entre {filters['min_depth']} km y {filters['max_depth']} km")
+        elif "min_depth" in filters:
+            desc_parts.append(f"con profundidad superior a {filters['min_depth']} km")
+        elif "max_depth" in filters:
+            desc_parts.append(f"con profundidad menor o igual a {filters['max_depth']} km")
 
         crit_title = " ".join(desc_parts) if desc_parts else ""
         lines = [

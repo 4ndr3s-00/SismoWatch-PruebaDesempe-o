@@ -96,26 +96,37 @@ class OllamaClient:
         system = (
             "Eres un analizador semántico sismológico de alta precisión. Tu tarea es extraer filtros de búsqueda "
             "a partir de la consulta del usuario y devolver EXCLUSIVAMENTE un objeto JSON válido, sin explicaciones ni texto adicional.\n\n"
+            "Diferenciación física crítica:\n"
+            "- PROFUNDIDAD ('min_depth', 'max_depth'): Se mide en 'km', 'kilómetros', 'profundidad', 'hondo', 'superficial'. Rango: 0 a 700 km. Ejemplo: 'más de 200km', 'que cubran más de 200km', 'profundidad mayor a 50 km' -> min_depth = 200, min_mag = null.\n"
+            "- MAGNITUD ('min_mag', 'max_mag'): Es adimensional (escala 0.0 a 10.0), a menudo con 'M', 'grados', 'fuerte'. ¡NUNCA LLEVA KM Y NUNCA ES MAYOR A 10! Si alguien dice 200km o 50km, ¡ES PROFUNDIDAD, NUNCA MAGNITUD!\n\n"
             "Reglas críticas:\n"
-            "- Si el usuario pide sismos 'menores a X', 'inferiores a X', o 'menor o igual a X': max_mag = X, min_mag = null.\n"
-            "- Si el usuario pide sismos 'mayores a X', 'superiores a X', o 'mayor o igual a X': min_mag = X, max_mag = null.\n"
-            "- Si el usuario pide 'entre X e Y': min_mag = menor valor, max_mag = mayor valor.\n"
+            "- Si el usuario pide sismos 'a más de X km', 'cubran más de X km' o 'profundidad mayor a X': min_depth = X, max_depth = null, min_mag = null, max_mag = null.\n"
+            "- Si el usuario pide sismos 'a menos de X km', 'superficiales a X km' o 'profundidad menor a X': max_depth = X, min_depth = null, min_mag = null, max_mag = null.\n"
+            "- Si el usuario pide sismos 'menores a X', 'inferiores a X', o 'menor o igual a X' (donde X <= 10): max_mag = X, min_mag = null.\n"
+            "- Si el usuario pide sismos 'mayores a X', 'superiores a X', o 'mayor o igual a X' (donde X <= 10): min_mag = X, max_mag = null.\n"
+            "- Si el usuario pide 'entre X e Y' con km: min_depth = menor, max_depth = mayor.\n"
+            "- Si el usuario pide 'entre X e Y' magnitudes: min_mag = menor, max_mag = mayor.\n"
             "- Si el usuario pide ver todos los datos, la lista completa, mostrar todo o cuántos hay en total: intent = 'SHOW_ALL_EVENTS', filtros = null.\n"
             "- Si el usuario pregunta por 'el más fuerte' o 'mayor magnitud': target = 'MAX_MAGNITUDE'.\n"
-            "- Si el usuario pregunta por 'el más leve' o 'menor magnitud': target = 'MIN_MAGNITUDE'.\n\n"
+            "- Si el usuario pregunta por 'el más profundo': target = 'MAX_DEPTH'.\n"
+            "- Si el usuario pregunta por 'el más superficial': target = 'MIN_DEPTH'.\n\n"
             "Ejemplos:\n"
+            "Consulta: 'Dame los sismos que cubran mas de 200km'\n"
+            'Respuesta: {"place_contains": null, "place_excludes": null, "min_mag": null, "max_mag": null, "min_depth": 200.0, "max_depth": null, "target": null, "intent": "FILTER_QUERY"}\n\n'
             "Consulta: 'cuales de esos fueron menor o igual a 4.3 M' con contexto 'Colombia'\n"
-            'Respuesta: {"place_contains": "Colombia", "place_excludes": null, "min_mag": null, "max_mag": 4.3, "target": null, "intent": "FILTER_QUERY"}\n\n'
+            'Respuesta: {"place_contains": "Colombia", "place_excludes": null, "min_mag": null, "max_mag": 4.3, "min_depth": null, "max_depth": null, "target": null, "intent": "FILTER_QUERY"}\n\n'
             "Consulta: 'sismos mayores a 5.0 fuera de Colombia'\n"
-            'Respuesta: {"place_contains": null, "place_excludes": "Colombia", "min_mag": 5.0, "max_mag": null, "target": null, "intent": "FILTER_QUERY"}\n\n'
+            'Respuesta: {"place_contains": null, "place_excludes": "Colombia", "min_mag": 5.0, "max_mag": null, "min_depth": null, "max_depth": null, "target": null, "intent": "FILTER_QUERY"}\n\n'
             "Consulta: 'Muéstrame todos los datos y la lista completa'\n"
-            'Respuesta: {"place_contains": null, "place_excludes": null, "min_mag": null, "max_mag": null, "target": null, "intent": "SHOW_ALL_EVENTS"}\n\n'
+            'Respuesta: {"place_contains": null, "place_excludes": null, "min_mag": null, "max_mag": null, "min_depth": null, "max_depth": null, "target": null, "intent": "SHOW_ALL_EVENTS"}\n\n'
             "Esquema JSON obligatorio:\n"
             "{\n"
             '  "place_contains": string o null,\n'
             '  "place_excludes": string o null,\n'
             '  "min_mag": float o null,\n'
             '  "max_mag": float o null,\n'
+            '  "min_depth": float o null,\n'
+            '  "max_depth": float o null,\n'
             '  "target": string o null,\n'
             '  "intent": "FILTER_QUERY" | "SHOW_ALL_EVENTS" | "SUPERLATIVE" | "EXECUTIVE_SUMMARY"\n'
             "}"
@@ -159,6 +170,21 @@ class OllamaClient:
             if any(w in q_low for w in ["mayor", "superior", "más", "mas", "arriba", "mínimo", "minimo", ">="]):
                 if parsed.get("max_mag") is not None and parsed.get("min_mag") is None:
                     parsed["min_mag"] = parsed.pop("max_mag")
+
+            # CRITICAL SANITY RECONCILIATION: Magnitude vs Depth (km)
+            # Physical boundary: Terrestrial earthquake magnitude is strictly between -2.0 and 10.0.
+            # Any number > 10.0 is depth in km, NEVER magnitude!
+            if parsed.get("min_mag") is not None and parsed["min_mag"] > 10.0:
+                parsed["min_depth"] = parsed.pop("min_mag")
+            if parsed.get("max_mag") is not None and parsed["max_mag"] > 10.0:
+                parsed["max_depth"] = parsed.pop("max_mag")
+
+            # If user query specifically mentions km / kilometros / cubran / profundidad:
+            if any(k in q_low for k in ["km", "kilómetro", "kilometro", "profund", "cubran"]) and not any(m in q_low for m in ["magnitud", "grados", "escala"]):
+                if parsed.get("min_mag") is not None and parsed.get("min_depth") is None:
+                    parsed["min_depth"] = parsed.pop("min_mag")
+                if parsed.get("max_mag") is not None and parsed.get("max_depth") is None:
+                    parsed["max_depth"] = parsed.pop("max_mag")
 
             # Explicit detection for SHOW_ALL_EVENTS if asking for all records or overall count
             if any(p in q_low for p in ["todos los datos", "todos los sismos", "muestrame todos", "muéstrame todos", "lista completa", "ver todos", "mostrar todo", "cuántos sismos hay", "cuantos sismos hay", "cuántos sismos registrados", "cuantos sismos registrados"]):
