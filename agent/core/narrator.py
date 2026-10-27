@@ -9,8 +9,8 @@ class ResponseNarrator:
     """Natural Language response generator with deterministic truth grounding."""
 
     @classmethod
-    def format_all_20_events(cls, events: List[Dict[str, Any]], storage_source: str) -> Dict[str, str]:
-        """Formats the official 20-event dataset ensuring 1:1 row count verification."""
+    def format_all_events(cls, events: List[Dict[str, Any]], storage_source: str) -> Dict[str, str]:
+        """Formats the curated dataset ensuring 1:1 row count verification without truncation."""
         total = len(events)
         text_lines = [
             f"Reporte Oficial de Sismos — Se certifican {total} eventos consolidados en la base de datos:\n"
@@ -26,15 +26,20 @@ class ResponseNarrator:
 
         text_lines.append(f"\nTotal: {total} de {total} eventos verificados (Integridad: 100%).")
 
-        speech = (
-            f"Se certifican los {total} eventos sísmicos consolidados. "
-            f"El rango de magnitudes va desde 2.2 hasta 6.4, con 13 eventos en Colombia."
-        )
+        if events:
+            magnitudes = [float(e.get("magnitude", 0)) for e in events]
+            min_m, max_m = min(magnitudes), max(magnitudes)
+            speech = f"Se certifican los {total} eventos sísmicos consolidados con integridad 1:1. El rango de magnitudes va desde {min_m:.1f} hasta {max_m:.1f}."
+        else:
+            speech = "No se encontraron eventos sísmicos registrados."
 
         return {
             "text": "\n".join(text_lines),
             "speech_text": speech
         }
+
+    # Backward compatibility alias
+    format_all_20_events = format_all_events
 
     @classmethod
     def format_superlative(cls, target: str, event: Dict[str, Any], total_count: int) -> Dict[str, str]:

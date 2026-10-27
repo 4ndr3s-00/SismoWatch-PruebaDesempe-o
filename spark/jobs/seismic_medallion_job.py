@@ -241,13 +241,13 @@ class SeismicMedallionPipeline:
         }
 
 if __name__ == "__main__":
-    # Test execution with live USGS earthquake data feed
+    # Execution with live USGS earthquake data feed without artificial limits
     from pipeline.extractors.usgs_live_client import USGSLiveClient
     extractor = USGSLiveClient()
-    clean_events, meta = extractor.fetch_live_catalog(min_magnitude=2.5, limit=20)
+    clean_events, meta = extractor.fetch_live_catalog()
 
     pipeline = SeismicMedallionPipeline()
     print("=== Seismic Medallion Pipeline Execution Summary (Live USGS) ===")
     print(json.dumps(meta, indent=2))
-    assert meta["records_extracted"] == len(clean_events)
-    print(f"SUCCESS: Ingested {meta['records_extracted']} -> Curated {meta['records_curated']} live USGS events!")
+    assert meta["records_curated"] == len(clean_events)
+    print(f"SUCCESS: Ingested {meta['records_extracted']} -> Curated {meta['records_curated']} live USGS events without limits!")

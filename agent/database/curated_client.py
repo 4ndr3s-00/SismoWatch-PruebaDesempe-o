@@ -103,7 +103,7 @@ class CuratedDataClient:
         place_contains: Optional[str] = None,
         place_excludes: Optional[str] = None,
         order_by: str = "magnitude_desc",
-        limit: int = 50
+        limit: Optional[int] = None
     ) -> Tuple[List[Dict[str, Any]], str]:
         """Queries events using parameterized filters with circuit breaker protection."""
         all_events, source = self.fetch_all_events()
@@ -144,7 +144,7 @@ class CuratedDataClient:
         elif order_by == "time_asc":
             filtered.sort(key=lambda x: str(x.get("event_time", "")))
 
-        return filtered[:limit], source
+        return (filtered[:limit] if limit is not None else filtered), source
 
     def get_summary_statistics(self) -> Dict[str, Any]:
         """Calculates exact aggregate statistics across the curated dataset."""

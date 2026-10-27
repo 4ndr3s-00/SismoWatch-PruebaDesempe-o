@@ -112,7 +112,7 @@ class SismoWatchAgent:
                         "filters": raw_filters,
                         "target": llm_parsed.get("target"),
                         "order_by": "magnitude_desc",
-                        "limit": 20
+                        "limit": None
                     }
                     used_model = "llama3.2:3b (local-ollama)"
             except Exception:
@@ -171,7 +171,7 @@ class SismoWatchAgent:
                 place_contains=filters.get("place_contains"),
                 place_excludes=filters.get("place_excludes"),
                 order_by=parsed.get("order_by", "magnitude_desc"),
-                limit=parsed.get("limit", 20)
+                limit=parsed.get("limit", None)
             )
             formatted = ResponseNarrator.format_filtered_results(events, filters, summary_stats)
             self.session_context["last_event_count"] = len(events)

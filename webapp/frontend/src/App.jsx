@@ -179,7 +179,7 @@ export default function App() {
     {
       id: 1,
       sender: 'assistant',
-      text: 'Sistema de monitoreo activo. Tengo acceso a los 20 eventos sísmicos consolidados en la base de datos. Puedes consultarme por regiones, magnitudes, sismos superficiales o pedir el reporte completo.'
+      text: 'Sistema de monitoreo activo. Tengo acceso en tiempo real a todos los eventos sísmicos consolidados en la base de datos. Puedes consultarme por regiones, magnitudes, sismos superficiales o pedir el reporte completo.'
     }
   ]);
   const [inputMessage, setInputMessage] = useState('');

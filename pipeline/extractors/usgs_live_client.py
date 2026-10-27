@@ -18,6 +18,8 @@ from quality.validator import SeismicDataValidator
 
 logger = logging.getLogger(__name__)
 
+USGS_ALL_DAY_URL = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_day.geojson"
+USGS_25_DAY_URL = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_day.geojson"
 USGS_HOURLY_URL = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/all_hour.geojson"
 USGS_QUERY_URL = "https://earthquake.usgs.gov/fdsnws/event/1/query"
 
@@ -31,12 +33,26 @@ class USGSLiveClient:
         os.makedirs(self.raw_dir, exist_ok=True)
         os.makedirs(self.curated_dir, exist_ok=True)
 
-    def fetch_live_catalog(self, min_magnitude: float = 2.0, limit: int = 25) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
+    def fetch_live_catalog(
+        self,
+        min_magnitude: Optional[float] = None,
+        limit: Optional[int] = None
+    ) -> Tuple[List[Dict[str, Any]], Dict[str, Any]]:
         """
-        Fetches the latest real-world seismic events from USGS catalog.
+        Fetches the latest real-world seismic events from USGS catalog without artificial limits.
+        If limit is None, all natural incoming events from the live feed are processed.
         Returns: (curated_records, extraction_metadata)
         """
-        url = f"{USGS_QUERY_URL}?format=geojson&minmagnitude={min_magnitude}&limit={limit}&orderby=time"
+        if limit is not None:
+            url = f"{USGS_QUERY_URL}?format=geojson&minmagnitude={min_magnitude or 2.0}&limit={limit}&orderby=time"
+        else:
+            if min_magnitude is not None and min_magnitude >= 2.5:
+                url = USGS_25_DAY_URL
+            elif min_magnitude is not None and min_magnitude <= 0.0:
+                url = USGS_ALL_DAY_URL
+            else:
+                url = USGS_ALL_DAY_URL
+
         logger.info(f"Connecting to live USGS API: {url}")
         
         req = urllib.request.Request(

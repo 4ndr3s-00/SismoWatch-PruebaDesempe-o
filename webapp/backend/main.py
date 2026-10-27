@@ -133,7 +133,8 @@ async def get_events(
     min_mag: Optional[float] = None,
     max_mag: Optional[float] = None,
     place: Optional[str] = None,
-    order: str = "magnitude_desc"
+    order: str = "magnitude_desc",
+    limit: Optional[int] = None
 ):
     """Returns curated seismic events with exact counts and statistics."""
     events, source = curated_client.query_events(
@@ -141,12 +142,12 @@ async def get_events(
         max_mag=max_mag,
         place_contains=place,
         order_by=order,
-        limit=50
+        limit=limit
     )
     stats = curated_client.get_summary_statistics()
     return {
         "count": len(events),
-        "total_curated": stats.get("total_count", 20),
+        "total_curated": stats.get("total_count", len(events)),
         "source": source,
         "events": events
     }
@@ -161,8 +162,8 @@ async def get_event_detail(event_id: str):
     return matched
 
 @app.post("/api/events/sync", tags=["Seismic Events"])
-async def sync_live_usgs_events(limit: int = 20, min_mag: float = 2.5):
-    """Fetches real-world live events from official USGS API and updates curated layer."""
+async def sync_live_usgs_events(limit: Optional[int] = None, min_mag: Optional[float] = None):
+    """Fetches real-world live events from official USGS API without artificial limits and updates curated layer."""
     try:
         clean_records, meta = usgs_extractor.fetch_live_catalog(min_magnitude=min_mag, limit=limit)
         return {

@@ -28,13 +28,13 @@ class SeismologicalNLU:
         q = query.lower().strip()
         context = context or {}
 
-        # 1. Detect 'Show All Events' Intent (The 20-Record Integrity Query)
+        # 1. Detect 'Show All Events' Intent (Integrity Query without artificial limits)
         if any(p in q for p in ["todos", "todos los datos", "mostrar todo", "muestrame todos", "muéstramelos todos", "lista completa", "ver todos", "los 20", "cuántos sismos hay", "cuantos sismos hay"]):
             return {
                 "intent": "SHOW_ALL_EVENTS",
                 "filters": {},
                 "order_by": "time_desc",
-                "limit": 50
+                "limit": None
             }
 
         # 2. Detect 'Summary / General Report' Intent
@@ -43,7 +43,7 @@ class SeismologicalNLU:
                 "intent": "EXECUTIVE_SUMMARY",
                 "filters": {},
                 "order_by": "time_desc",
-                "limit": 50
+                "limit": None
             }
 
         # 3. Detect Superlative Intents (Strongest, Weakest, Shallowest, Deepest, Most Recent, Oldest)
@@ -193,5 +193,5 @@ class SeismologicalNLU:
             "intent": intent,
             "filters": filters,
             "order_by": "magnitude_desc",
-            "limit": 20
+            "limit": None
         }

@@ -56,11 +56,11 @@ class ConversationRouter:
                     "category": "GREETING",
                     "text": (
                         "¡Hola! Un gusto saludarte. Soy el Agente Sismológico Inteligente de SismoWatch. "
-                        "Tengo acceso directo y verificado a los 20 eventos sísmicos consolidados en la base de datos. "
-                        "¿En qué puedo orientarte hoy? Puedes consultarme por sismos en Colombia, el evento más fuerte, "
+                        "Tengo acceso directo y verificado a todos los eventos sísmicos consolidados en la base de datos. "
+                        "¿En qué puedo orientarte hoy? Puedes consultarme por sismos por región o país, el evento más fuerte, "
                         "filtrar por magnitudes o pedirme el reporte completo."
                     ),
-                    "speech_text": "Hola, soy el Agente Inteligente de SismoWatch. Tengo acceso a los 20 eventos sísmicos consolidados. ¿Qué deseas consultar hoy?",
+                    "speech_text": "Hola, soy el Agente Inteligente de SismoWatch. Tengo acceso a todos los eventos sísmicos consolidados. ¿Qué deseas consultar hoy?",
                     "action_required": False
                 }
 
@@ -72,7 +72,7 @@ class ConversationRouter:
                     "category": "PLEASANTRY",
                     "text": (
                         "¡Estoy muy bien, gracias por preguntar! Todos los sistemas del pipeline de SismoWatch y "
-                        "la red de sensores se encuentran operando con normalidad. Los 20 eventos sísmicos están 100% "
+                        "la red de sensores se encuentran operando con normalidad. Todos los eventos sísmicos están 100% "
                         "validados en la capa Curated. ¿Deseas consultar alguna región o magnitud en particular?"
                     ),
                     "speech_text": "Estoy muy bien, gracias por preguntar. Los sistemas de monitoreo sísmico están operando con normalidad. ¿En qué te ayudo?",
@@ -90,7 +90,7 @@ class ConversationRouter:
                         "exclusivamente a los datos procesados por nuestro pipeline de Airflow y Spark. "
                         "Mis capacidades incluyen:\n"
                         "• Consultas en lenguaje natural sobre eventos sísmicos auditados.\n"
-                        "• Desglose y verificación de los 20 eventos consolidados.\n"
+                        "• Desglose y verificación de todos los eventos consolidados.\n"
                         "• Análisis por región geográfica, rangos de magnitud y profundidad focal.\n"
                         "• Reporte del estado de salud y telemetría de sensores."
                     ),
@@ -106,14 +106,14 @@ class ConversationRouter:
                     "category": "HELP",
                     "text": (
                         "Aquí tienes algunos ejemplos de lo que puedes consultarme:\n"
-                        "• '¿Cuántos sismos hay en total y muéstramelos todos?' (despliega los 20 eventos exactos)\n"
-                        "• '¿Cuáles temblores ocurrieron en Colombia?'\n"
+                        "• '¿Cuántos sismos hay en total y muéstramelos todos?' (despliega la lista completa certificada)\n"
+                        "• '¿Cuáles temblores ocurrieron en Colombia o en Indonesia?'\n"
                         "• '¿Cuál fue el sismo más fuerte y dónde ocurrió?'\n"
                         "• 'Muéstrame los sismos con magnitud mayor a 4.0'\n"
                         "• '¿Cuáles son los sismos más superficiales?'\n"
-                        "• '¿Hubo sismos que no fueran en Colombia?'"
+                        "• '¿Hubo sismos menores o iguales a 4.5 M?'"
                     ),
-                    "speech_text": "Puedes preguntarme por sismos en Colombia, el evento más fuerte, rangos de magnitud o pedirme la lista de los 20 datos completos.",
+                    "speech_text": "Puedes preguntarme por sismos por región, el evento más fuerte, rangos de magnitud o pedirme la lista completa.",
                     "action_required": False
                 }
 
