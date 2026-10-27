@@ -146,6 +146,34 @@ PREDEFINED_KNOWLEDGE_BASE: List[Dict[str, Any]] = [
             "¡Con gusto! Ha sido un placer ayudarte. El sistema de monitoreo de SismoWatch continúa en vigilancia activa en tiempo real. ¡Hasta luego!"
         ),
         "speech_text": "Con gusto, ha sido un placer ayudarte. Quedo en vigilancia continua ante cualquier nuevo evento sísmico."
+    },
+    {
+        "category": "OUT_OF_SCOPE",
+        "anchors": [
+            "cómo hago un arroz con pollo",
+            "receta de arroz con pollo",
+            "cómo hacer arroz con pollo",
+            "cómo cocinar",
+            "cómo hacer comida",
+            "dame una receta de cocina",
+            "cómo preparar un plato",
+            "cuéntame un chiste",
+            "quién ganó el partido",
+            "quién ganó el mundial",
+            "cuál es la capital de francia",
+            "cómo arreglo mi auto",
+            "escribe un poema",
+            "cómo programar en python",
+            "cuánto vale el bitcoin",
+            "quién es el presidente"
+        ],
+        "response": (
+            "Mi especialidad como Agente de SismoWatch se enfoca exclusivamente en el monitoreo y análisis "
+            "de eventos sísmicos en la plataforma. No puedo ayudarte con consultas fuera de contexto "
+            "(como recetas de cocina, cultura general o temas ajenos a la red sismológica). "
+            "Te invito a consultarme por sismos registrados por país o región, magnitudes, profundidades focales o estadísticas del catálogo."
+        ),
+        "speech_text": "Mi función se enfoca exclusivamente en monitoreo sísmico. No puedo responder consultas fuera de contexto."
     }
 ]
 

@@ -52,14 +52,18 @@ def test_dag_backfill_params_and_documentation():
     assert "mode" in DAG_PARAMS
     assert "limit" in DAG_PARAMS
 
-def test_dag_tasks_execution_simulation():
+def test_dag_tasks_execution_simulation(tmp_path):
     """
     Simulate full DAG tasks execution with official 20 events:
     extract -> transform -> verify 20 in == 20 out.
     """
+    lakehouse_dir = str(tmp_path / "lakehouse")
     # 1. Simulate extract task
     extract_fn = getattr(extract_seismic_data, "__wrapped__", extract_seismic_data)
-    ingestion_meta = extract_fn(params={"mode": "local_test_20", "limit": 20}, run_id="airflow_test_sim")
+    ingestion_meta = extract_fn(
+        params={"mode": "local_test_20", "limit": 20, "lakehouse_dir": lakehouse_dir},
+        run_id="airflow_test_sim"
+    )
 
     assert ingestion_meta["record_count"] == 20
     assert os.path.exists(ingestion_meta["raw_file_ref"])

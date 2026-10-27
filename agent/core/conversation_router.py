@@ -33,15 +33,69 @@ class ConversationRouter:
     ]
 
     OUT_OF_SCOPE_PATTERNS = [
-        r"\b(receta|cocinar|ajiaco|pizza|hamburguesa|comida|restaurante)\b",
-        r"\b(bitcoin|criptomoneda|trading|inversi[oó]n|acciones|d[oó]lar)\b",
-        r"\b(chiste|poema|canci[oó]n|cuento|historieta)\b",
-        r"\b(presidente|elecciones|pol[ií]tica|partido)\b",
-        r"\b(f[uú]tbol|campeonato|liga)\b"
+        r"\b(receta|recetas|cocina|cocinar|arroz|pollo|ajiaco|pizza|hamburguesa|comida|almuerzo|cena|desayuno|pasta|carne|sopa|hacer\s+un\s+|c[oó]mo\s+hago|c[oó]mo\s+preparo|ingredientes|postre)\b",
+        r"\b(bitcoin|criptomoneda|trading|inversi[oó]n|acciones|d[oó]lar|dinero|forex)\b",
+        r"\b(chiste|poema|canci[oó]n|cuento|historieta|letra\s+de|pel[ií]cula|serie|netflix|actor|m[uú]sica)\b",
+        r"\b(presidente|elecciones|pol[ií]tica|partido\s+pol[ií]tico|candidato)\b",
+        r"\b(f[uú]tbol|campeonato|liga|partido|gol|champions|mundial|messi|ronaldo|baloncesto|nba|videojuego|minecraft)\b",
+        r"\b(capital\s+de|qui[eé]n\s+(invent[oó]|descubri[oó]|gan[oó])|clima|tiempo\s+en|temperatura|pron[oó]stico|tarea|matem[aá]ticas)\b",
+        r"\b(carro|auto|mec[aá]nica|bicicleta|reparar|arreglar|m[eé]dico|medicina|s[ií]ntomas?|enfermedad)\b"
     ]
 
     @classmethod
-    def evaluate(cls, query: str) -> Optional[Dict[str, Any]]:
+    def is_seismological_or_analytical(cls, query: str, context: Optional[Dict[str, Any]] = None) -> bool:
+        """
+        Determines whether the query is relevant to seismology, database records,
+        geographical territories, or previous multi-turn analytical context.
+        """
+        clean = query.lower()
+
+        # Multi-turn reference ("de esos", "allí", "en ese lugar", "cuál de ellos")
+        if context and context.get("last_intent") and re.search(r"\b(de\s+esos|de\s+estos|all[ií]|en\s+ese\s+lugar|cu[aá]l\s+de\s+ellos|y\s+de\s+esos)\b", clean):
+            return True
+
+        # Seismological domain keywords
+        seismic_pattern = (
+            r"\b(sismo|sismos|terremoto|terremotos|temblor|temblores|epicentro|hipocentro|falla|placas?|"
+            r"tsunami|richter|magnitud|magnitudes|profundidad|profundidades|focal|tel[uú]rico|geol[oó]gic|"
+            r"red\s*s[ií]smica|estaci[oó]n|estaciones|sensor|sensores|aceler[oó]metro|onda\s*[ps]|anomal[ií]a|"
+            r"movimiento|sacudida)\b"
+        )
+        if re.search(seismic_pattern, clean):
+            return True
+
+        # Database / Data extraction keywords
+        data_pattern = (
+            r"\b(cu[aá]ntos?|total|registros?|datos?|mostrar|muestra|ver|listar?|listado|tabla|"
+            r"base\s+de\s+datos|cat[aá]logo|lakehouse|curated|resumen|estad[ií]sticas?|sla|quarantine|"
+            r"informaci[oó]n|reporte|reportes|todos|todo|eventos?)\b"
+        )
+        if re.search(data_pattern, clean):
+            return True
+
+        # Physical measurements / Superlatives
+        phys_pattern = (
+            r"\b(m[aá]s\s*fuerte|m[aá]s\s*profundo|m[aá]s\s*superficial|superficiales|fuerte|profundo|"
+            r"mayor\s*a|menor\s*a|superior|inferior|igual\s*a|\d+(\.\d+)?\s*(m|km))\b"
+        )
+        if re.search(phys_pattern, clean):
+            return True
+
+        # Geographical territory check
+        try:
+            from agent.core.geo_resolver import GeoEntityResolver
+            if GeoEntityResolver.is_us_query(clean):
+                return True
+            for canonical, aliases in GeoEntityResolver.INTERNATIONAL_CATALOG.items():
+                if any(alias in clean for alias in aliases):
+                    return True
+        except Exception:
+            pass
+
+        return False
+
+    @classmethod
+    def evaluate(cls, query: str, context: Optional[Dict[str, Any]] = None) -> Optional[Dict[str, Any]]:
         """
         Evaluates query for conversational fast paths.
         Returns response dict if matched, or None if it requires analytical database execution.
@@ -131,7 +185,7 @@ class ConversationRouter:
                     "action_required": False
                 }
 
-        # 6. Out-of-Scope Detection with Human Escalation
+        # 6. Out-of-Scope Explicit Pattern Match
         for pat in cls.OUT_OF_SCOPE_PATTERNS:
             if re.search(pat, clean, re.IGNORECASE):
                 return {
@@ -139,12 +193,27 @@ class ConversationRouter:
                     "category": "OUT_OF_SCOPE",
                     "text": (
                         "Mi especialidad como Agente de SismoWatch se enfoca exclusivamente en el monitoreo y análisis "
-                        "de eventos sísmicos en la capa Curated. No dispongo de información sobre ese tema. "
-                        "Si consideras que esta consulta requiere soporte administrativo o de otro departamento, "
-                        "con gusto puedo escalar tu solicitud a un operador humano."
+                        "de eventos sísmicos en la plataforma. No puedo responder consultas fuera de contexto "
+                        "(como recetas de cocina, cultura general o temas ajenos a la red sismológica). "
+                        "Te invito a consultarme por sismos registrados por país o región, magnitudes, profundidades focales o estadísticas del catálogo."
                     ),
-                    "speech_text": "Mi función se enfoca exclusivamente en monitoreo sísmico. No dispongo de información sobre ese tema y puedo transferirte con un operador humano si lo necesitas.",
+                    "speech_text": "Mi función se enfoca exclusivamente en monitoreo sísmico. No puedo responder consultas fuera de contexto.",
                     "action_required": False
                 }
+
+        # 7. Domain Boundary Guard: Reject queries with zero seismological or analytical relevance
+        if not cls.is_seismological_or_analytical(clean, context):
+            return {
+                "matched": True,
+                "category": "OUT_OF_SCOPE",
+                "text": (
+                    "Mi especialidad como Agente de SismoWatch se enfoca exclusivamente en el monitoreo y análisis "
+                    "de eventos sísmicos en la plataforma. No puedo responder consultas fuera de contexto "
+                    "(como recetas de cocina, cultura general o temas ajenos a la red sismológica). "
+                    "Te invito a consultarme por sismos registrados por país o región, magnitudes, profundidades focales o estadísticas del catálogo."
+                ),
+                "speech_text": "Mi función se enfoca exclusivamente en monitoreo sísmico. No puedo responder consultas fuera de contexto.",
+                "action_required": False
+            }
 
         return None

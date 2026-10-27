@@ -100,8 +100,8 @@ class SismoWatchAgent:
                 }
             }
 
-        # Fallback to rule-based conversation router (Out-of-scope, etc.)
-        fast_resp = ConversationRouter.evaluate(sanitized_query)
+        # Fallback to rule-based conversation router (Out-of-scope, domain guard, etc.)
+        fast_resp = ConversationRouter.evaluate(sanitized_query, context=self.session_context)
         if fast_resp:
             elapsed_ms = round((time.time() - start_time) * 1000, 2)
             return {
@@ -173,7 +173,32 @@ class SismoWatchAgent:
         # -------------------------------------------------------------
         # 4. GROUNDED DATABASE EXECUTION & NARRATION
         # -------------------------------------------------------------
-        if intent in ("SHOW_ALL_EVENTS", "ALL_EVENTS"):
+        if intent == "OUT_OF_SCOPE":
+            elapsed_ms = round((time.time() - start_time) * 1000, 2)
+            out_of_scope_text = (
+                "Mi especialidad como Agente de SismoWatch se enfoca exclusivamente en el monitoreo y análisis "
+                "de eventos sísmicos en la plataforma. No puedo responder consultas fuera de contexto "
+                "(como recetas de cocina, cultura general o temas ajenos a la red sismológica). "
+                "Te invito a consultarme por sismos registrados por país o región, magnitudes, profundidades focales o estadísticas del catálogo."
+            )
+            return {
+                "response": out_of_scope_text,
+                "speech_text": "Mi función se enfoca exclusivamente en monitoreo sísmico. No puedo responder consultas fuera de contexto.",
+                "telemetry": {
+                    "model": used_model,
+                    "storage_backend": "DOMAIN_GUARD",
+                    "tokens_consumed": 0,
+                    "cost_usd": 0.00,
+                    "latency_ms": elapsed_ms,
+                    "anti_injection_status": "PASSED",
+                    "intent": "OUT_OF_SCOPE",
+                    "records_retrieved": 0,
+                    "evaluation_score": 1.0,
+                    "hallucination_probability": "0.00%"
+                }
+            }
+
+        elif intent in ("SHOW_ALL_EVENTS", "ALL_EVENTS"):
             events, source = self.db_client.fetch_all_events()
             formatted = ResponseNarrator.format_all_20_events(events, source)
             self.session_context["last_event_count"] = len(events)
@@ -198,8 +223,21 @@ class SismoWatchAgent:
                 formatted = ResponseNarrator.format_filtered_results([], filters, summary_stats)
                 self.session_context["last_event_count"] = 0
 
+        elif intent == "FILTER_QUERY" and not filters and not parsed.get("target"):
+            # Empty filters without explicit show_all request: do not dump whole database
+            formatted = {
+                "text": (
+                    "No identifiqué un criterio de búsqueda sísmica específico (como magnitud, profundidad o región geográfica). "
+                    "Por favor especifica tu consulta (por ejemplo: 'sismos mayores a 4.0', 'sismos en Colombia' o "
+                    "'¿cuál fue el sismo más fuerte?'), o solicita 'ver todos los sismos' para listar el catálogo consolidado."
+                ),
+                "speech_text": "Por favor especifica un criterio de búsqueda como magnitud, profundidad o región, o solicita ver todos los sismos.",
+                "action_required": False
+            }
+            self.session_context["last_event_count"] = 0
+
         else:
-            # FILTER_QUERY or COUNT_QUERY
+            # FILTER_QUERY or COUNT_QUERY with concrete filters
             events, source = self.db_client.query_events(
                 min_mag=filters.get("min_mag"),
                 max_mag=filters.get("max_mag"),

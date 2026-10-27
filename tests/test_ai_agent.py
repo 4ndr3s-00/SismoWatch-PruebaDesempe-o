@@ -143,3 +143,27 @@ def test_agent_distinguishes_depth_km_from_magnitude(agent):
     assert "profundidad" in resp
     assert "magnitud superior a 200" not in resp
     assert result["telemetry"]["records_retrieved"] >= 1
+
+def test_agent_blocks_out_of_context_and_recipe_queries(agent):
+    """
+    CRITICAL USER ACCEPTANCE TEST:
+    Out-of-context queries (e.g. 'Como hago un arroz con pollo?', sports, general chatter)
+    must NEVER dump the entire database or hallucinate recipes.
+    They must be intercepted with 0 tokens, $0.00 cost, and domain guidance.
+    """
+    out_of_context_queries = [
+        "Como hago un arroz con pollo?",
+        "¿Quién ganó el partido de ayer?",
+        "¿Cuál es la fórmula para calcular la densidad de un líquido?"
+    ]
+    for q in out_of_context_queries:
+        res = agent.ask(q)
+        resp = res["response"]
+        assert "fuera de contexto" in resp or "exclusivamente" in resp
+        assert "arroz" not in resp.lower() or "recetas" in resp.lower()
+        assert res["telemetry"]["tokens_consumed"] == 0
+        assert res["telemetry"]["cost_usd"] == 0.00
+        assert res["telemetry"]["intent"] == "OUT_OF_SCOPE"
+        # Must NEVER return database records for an out-of-scope query
+        assert res["telemetry"].get("records_retrieved", 0) == 0
+        assert "Listado completo certificado:" not in resp

@@ -8,6 +8,7 @@ import json
 from typing import List, Dict, Any, Optional, Tuple
 import psycopg2
 from psycopg2.extras import RealDictCursor
+from agent.core.geo_resolver import GeoEntityResolver
 
 class CuratedDataClient:
     """Read-only client for curated seismic events with circuit-breaker protection."""
@@ -123,9 +124,9 @@ class CuratedDataClient:
                 continue
             if max_depth is not None and depth > max_depth:
                 continue
-            if place_contains and place_contains.lower() not in place:
+            if place_contains and not GeoEntityResolver.matches_territory(e.get("place", ""), place_contains):
                 continue
-            if place_excludes and place_excludes.lower() in place:
+            if place_excludes and GeoEntityResolver.matches_territory(e.get("place", ""), place_excludes):
                 continue
 
             filtered.append(e)

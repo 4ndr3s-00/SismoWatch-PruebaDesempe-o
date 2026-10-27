@@ -4,6 +4,7 @@ Transforms verified database records into rich, natural, fluent Spanish narrativ
 Guarantees 0% hallucinations, cites official event_id, and formats data cleanly without raw markdown clutter.
 """
 from typing import List, Dict, Any, Optional
+from agent.core.geo_resolver import GeoEntityResolver
 
 class ResponseNarrator:
     """Natural Language response generator with deterministic truth grounding."""
@@ -110,31 +111,42 @@ class ResponseNarrator:
                 conds.append(f"profundidad menor a {filters['max_depth']} km")
 
             if "place_contains" in filters:
-                conds.append(f"en la región '{filters['place_contains']}'")
+                canon_target = GeoEntityResolver.get_canonical_name(filters["place_contains"])
+                conds.append(f"en la región '{canon_target}'")
             if "place_excludes" in filters:
-                conds.append(f"fuera de '{filters['place_excludes']}'")
+                canon_excl = GeoEntityResolver.get_canonical_name(filters["place_excludes"])
+                conds.append(f"fuera de '{canon_excl}'")
 
             crit_desc = ", ".join(conds) if conds else "los criterios especificados"
             max_m = summary_stats.get("max_magnitude", 6.4)
             max_ev = summary_stats.get("max_event", {})
             max_place = max_ev.get("place", "Ubicación desconocida")
 
+            # Clean grammatical formulation avoiding 'con en'
+            if crit_desc.startswith("en ") or crit_desc.startswith("fuera "):
+                intro = f"Revisé los {total} eventos de la base de datos y no se encontró ningún sismo {crit_desc}."
+            else:
+                intro = f"Revisé los {total} eventos de la base de datos y no se encontró ningún sismo con {crit_desc}."
+
             text = (
-                f"Revisé los {total} eventos de la base de datos y no se encontró ningún sismo con {crit_desc}.\n\n"
+                f"{intro}\n\n"
                 f"Contexto actual:\n"
                 f"• Sismo de mayor magnitud registrado: M {max_m} en {max_place} ({max_ev.get('event_id')})\n"
-                f"• Sismo más leve registrado: M {summary_stats.get('min_magnitude')}\n"
+                f"• Sismo más leve registrado: M {summary_stats.get('min_magnitude')}\n\n"
                 f"¿Deseas consultar por otra región o ajustar el rango?"
             )
-            speech = f"Revisé los {total} eventos de la base de datos y no se encontró ningún sismo con {crit_desc}. El sismo máximo registrado fue de magnitud {max_m}."
+            speech = f"{intro} El sismo máximo registrado fue de magnitud {max_m}."
             return {"text": text, "speech_text": speech}
 
-        # Results found
+        # Results found - Generate complete structured information
+        canonical_region = None
         desc_parts = []
         if "place_contains" in filters:
-            desc_parts.append(f"en {filters['place_contains']}")
+            canonical_region = GeoEntityResolver.get_canonical_name(filters["place_contains"])
+            desc_parts.append(f"en territorio de {canonical_region}")
         if "place_excludes" in filters:
-            desc_parts.append(f"excluyendo {filters['place_excludes']}")
+            canon_excl = GeoEntityResolver.get_canonical_name(filters["place_excludes"])
+            desc_parts.append(f"excluyendo territorio de {canon_excl}")
         if "min_mag" in filters and "max_mag" in filters:
             desc_parts.append(f"con magnitud entre {filters['min_mag']} y {filters['max_mag']}")
         elif "min_mag" in filters:
@@ -151,8 +163,24 @@ class ResponseNarrator:
 
         crit_title = " ".join(desc_parts) if desc_parts else ""
         lines = [
-            f"Se encontraron {count} eventos sísmicos {crit_title} (de un total de {total}):\n"
+            f"Se encontraron {count} eventos sísmicos {crit_title} (de un total de {total} en la base de datos):\n"
         ]
+
+        # Complete Breakdown: If multiple subregions or states exist, list distribution
+        if "place_contains" in filters and len(events) > 1:
+            breakdown = GeoEntityResolver.get_subregion_breakdown(events, filters["place_contains"])
+            if len(breakdown) > 1:
+                breakdown_items = [f"{k} ({v})" for k, v in list(breakdown.items())[:8]]
+                lines.append(f"• Distribución por estados/regiones: {', '.join(breakdown_items)}")
+
+        # Complete Highlight: Top significant event
+        if events:
+            top_ev = max(events, key=lambda x: float(x.get("magnitude", 0)))
+            lines.append(
+                f"• Evento más significativo: M {float(top_ev.get('magnitude', 0)):.1f} en {top_ev.get('place')} "
+                f"(Profundidad: {float(top_ev.get('depth', 0)):.1f} km | {top_ev.get('event_id')} | {str(top_ev.get('event_time'))[:19].replace('T', ' ')})\n"
+            )
+            lines.append("Listado completo certificado:")
 
         for idx, ev in enumerate(events, 1):
             e_id = ev.get("event_id", "N/A")

@@ -107,12 +107,17 @@ class OllamaClient:
             "- Si el usuario pide 'entre X e Y' con km: min_depth = menor, max_depth = mayor.\n"
             "- Si el usuario pide 'entre X e Y' magnitudes: min_mag = menor, max_mag = mayor.\n"
             "- Si el usuario pide ver todos los datos, la lista completa, mostrar todo o cuántos hay en total: intent = 'SHOW_ALL_EVENTS', filtros = null.\n"
+            "- Si la consulta NO tiene relación con sismos, geología, datos o la plataforma (ej: recetas de cocina, deportes, chistes, preguntas de vida cotidiana como 'Como hago un arroz con pollo'): intent = 'OUT_OF_SCOPE', todos los filtros = null.\n"
             "- Si el usuario pregunta por 'el más fuerte' o 'mayor magnitud': target = 'MAX_MAGNITUDE'.\n"
             "- Si el usuario pregunta por 'el más profundo': target = 'MAX_DEPTH'.\n"
             "- Si el usuario pregunta por 'el más superficial': target = 'MIN_DEPTH'.\n\n"
             "Ejemplos:\n"
             "Consulta: 'Dame los sismos que cubran mas de 200km'\n"
             'Respuesta: {"place_contains": null, "place_excludes": null, "min_mag": null, "max_mag": null, "min_depth": 200.0, "max_depth": null, "target": null, "intent": "FILTER_QUERY"}\n\n'
+            "Consulta: 'Como hago un arroz con pollo?'\n"
+            'Respuesta: {"place_contains": null, "place_excludes": null, "min_mag": null, "max_mag": null, "min_depth": null, "max_depth": null, "target": null, "intent": "OUT_OF_SCOPE"}\n\n'
+            "Consulta: 'Cuantos sismos se produjeron en territorio de estados unidos'\n"
+            'Respuesta: {"place_contains": "Estados Unidos", "place_excludes": null, "min_mag": null, "max_mag": null, "min_depth": null, "max_depth": null, "target": null, "intent": "FILTER_QUERY"}\n\n'
             "Consulta: 'cuales de esos fueron menor o igual a 4.3 M' con contexto 'Colombia'\n"
             'Respuesta: {"place_contains": "Colombia", "place_excludes": null, "min_mag": null, "max_mag": 4.3, "min_depth": null, "max_depth": null, "target": null, "intent": "FILTER_QUERY"}\n\n'
             "Consulta: 'sismos mayores a 5.0 fuera de Colombia'\n"
@@ -128,7 +133,7 @@ class OllamaClient:
             '  "min_depth": float o null,\n'
             '  "max_depth": float o null,\n'
             '  "target": string o null,\n'
-            '  "intent": "FILTER_QUERY" | "SHOW_ALL_EVENTS" | "SUPERLATIVE" | "EXECUTIVE_SUMMARY"\n'
+            '  "intent": "FILTER_QUERY" | "SHOW_ALL_EVENTS" | "SUPERLATIVE" | "EXECUTIVE_SUMMARY" | "OUT_OF_SCOPE"\n'
             "}"
         )
 
@@ -165,11 +170,25 @@ class OllamaClient:
             if any(w in q_low for w in ["menor", "inferior", "menos", "debajo", "máximo", "maximo", "<="]):
                 if parsed.get("min_mag") is not None and parsed.get("max_mag") is None:
                     parsed["max_mag"] = parsed.pop("min_mag")
+                elif parsed.get("max_mag") is None and not any(k in q_low for k in ["km", "kilómetro", "profund"]):
+                    m_less = re.search(r"(?:menor|inferior|menos|debajo|m[aá]ximo|hasta)\s*(?:o\s*igual\s*(?:a|que))?\s*(?:a|de|que)?\s*(?:magnitud)?\s*([0-9]+(?:\.[0-9]+)?)", q_low)
+                    if m_less:
+                        val = float(m_less.group(1))
+                        if val <= 10.0:
+                            parsed["max_mag"] = val
+                            parsed["target"] = None
 
             # Vice-versa: if query indicates 'greater than / above' and LLM set max_mag, reconcile to min_mag
             if any(w in q_low for w in ["mayor", "superior", "más", "mas", "arriba", "mínimo", "minimo", ">="]):
                 if parsed.get("max_mag") is not None and parsed.get("min_mag") is None:
                     parsed["min_mag"] = parsed.pop("max_mag")
+                elif parsed.get("min_mag") is None and not any(k in q_low for k in ["km", "kilómetro", "profund"]):
+                    m_num = re.search(r"(?:mayor|superior|m[aá]s|arriba)\s*(?:o\s*igual\s*(?:a|que))?\s*(?:a|de|que)?\s*(?:magnitud)?\s*([0-9]+(?:\.[0-9]+)?)", q_low)
+                    if m_num:
+                        val = float(m_num.group(1))
+                        if val <= 10.0:
+                            parsed["min_mag"] = val
+                            parsed["target"] = None
 
             # CRITICAL SANITY RECONCILIATION: Magnitude vs Depth (km)
             # Physical boundary: Terrestrial earthquake magnitude is strictly between -2.0 and 10.0.

@@ -6,6 +6,7 @@ negation, and superlatives without requiring external LLM token expenditure.
 import re
 import difflib
 from typing import Dict, Any, Optional
+from agent.core.geo_resolver import GeoEntityResolver
 
 class SeismologicalNLU:
     """Natural Language Understanding parser for seismic monitoring queries."""
@@ -38,7 +39,7 @@ class SeismologicalNLU:
             }
 
         # 2. Detect 'Summary / General Report' Intent
-        if any(p in q for p in ["resumen", "reporte", "informe", "estad[ií]stica", "panorama", "balance"]):
+        if any(re.search(p, q, re.IGNORECASE) for p in ["resumen", "reporte", "informe", r"estad[ií]stica", "panorama", "balance"]):
             return {
                 "intent": "EXECUTIVE_SUMMARY",
                 "filters": {},
@@ -47,7 +48,7 @@ class SeismologicalNLU:
             }
 
         # 3. Detect Superlative Intents (Strongest, Weakest, Shallowest, Deepest, Most Recent, Oldest)
-        if any(p in q for p in ["m[aá]s fuerte", "m[aá]s grande", "mayor magnitud", "m[aá]ximo", "terremoto m[aá]s bravo"]):
+        if any(re.search(p, q, re.IGNORECASE) for p in [r"m[aá]s\s*fuerte", r"m[aá]s\s*grande", r"mayor\s*magnitud", r"m[aá]ximo", r"terremoto\s*m[aá]s\s*bravo", r"sismo\s*m[aá]s\s*fuerte"]):
             return {
                 "intent": "SUPERLATIVE",
                 "target": "MAX_MAGNITUDE",
@@ -55,7 +56,7 @@ class SeismologicalNLU:
                 "limit": 1
             }
 
-        if any(p in q for p in ["m[aá]s leve", "m[aá]s suave", "menor magnitud", "m[ií]nimo", "m[aá]s bajito"]):
+        if any(re.search(p, q, re.IGNORECASE) for p in [r"m[aá]s\s*leve", r"m[aá]s\s*suave", r"menor\s*magnitud", r"m[ií]nimo", r"m[aá]s\s*bajito"]):
             return {
                 "intent": "SUPERLATIVE",
                 "target": "MIN_MAGNITUDE",
@@ -63,7 +64,7 @@ class SeismologicalNLU:
                 "limit": 1
             }
 
-        if any(p in q for p in ["m[aá]s profundo", "m[aá]s hondo", "mayor profundidad"]):
+        if any(re.search(p, q, re.IGNORECASE) for p in [r"m[aá]s\s*profundo", r"m[aá]s\s*hondo", r"mayor\s*profundidad"]):
             return {
                 "intent": "SUPERLATIVE",
                 "target": "DEEPEST",
@@ -71,7 +72,7 @@ class SeismologicalNLU:
                 "limit": 1
             }
 
-        if any(p in q for p in ["m[aá]s superficial", "menor profundidad", "menos profundo", "playo"]):
+        if any(re.search(p, q, re.IGNORECASE) for p in [r"m[aá]s\s*superficial", r"menor\s*profundidad", r"menos\s*profundo", "playo", "superficiales"]):
             return {
                 "intent": "SUPERLATIVE",
                 "target": "SHALLOWEST",
@@ -79,7 +80,7 @@ class SeismologicalNLU:
                 "limit": 1
             }
 
-        if any(p in q for p in ["m[aá]s reciente", "[uú]ltimo sismo", "[uú]ltimo temblor"]):
+        if any(re.search(p, q, re.IGNORECASE) for p in [r"m[aá]s\s*reciente", r"[uú]ltimo\s*sismo", r"[uú]ltimo\s*temblor"]):
             return {
                 "intent": "SUPERLATIVE",
                 "target": "MOST_RECENT",
@@ -87,7 +88,7 @@ class SeismologicalNLU:
                 "limit": 1
             }
 
-        if any(p in q for p in ["primer sismo", "primer temblor", "m[aá]s antiguo", "primero"]):
+        if any(re.search(p, q, re.IGNORECASE) for p in ["primer sismo", "primer temblor", r"m[aá]s\s*antiguo", "primero"]):
             return {
                 "intent": "SUPERLATIVE",
                 "target": "OLDEST",
@@ -166,16 +167,36 @@ class SeismologicalNLU:
         negation_match = re.search(r"(?:no\s*en|fuera\s*de|que\s*no\s*sean?\s*de)\s*([a-záéíóúñ\s]+)", q)
         if negation_match:
             cand = negation_match.group(1).strip()
-            # Match against known locations
-            matches = difflib.get_close_matches(cand.capitalize(), cls.KNOWN_LOCATIONS, n=1, cutoff=0.6)
-            if matches:
-                place_excludes = matches[0]
+            if GeoEntityResolver.is_us_query(cand):
+                place_excludes = "Estados Unidos"
+            else:
+                canon = GeoEntityResolver.get_canonical_name(cand)
+                if canon and canon.lower() != cand.lower():
+                    place_excludes = canon
+                else:
+                    matches = difflib.get_close_matches(cand.capitalize(), cls.KNOWN_LOCATIONS, n=1, cutoff=0.6)
+                    if matches:
+                        place_excludes = matches[0]
 
         if not place_excludes:
-            for loc in cls.KNOWN_LOCATIONS:
-                if loc.lower() in q:
-                    place_contains = loc
-                    break
+            # First check if user is querying for US territory
+            if GeoEntityResolver.is_us_query(q):
+                place_contains = "Estados Unidos"
+            else:
+                # Check international catalog
+                for cat_id, meta in GeoEntityResolver.INTERNATIONAL_CATALOG.items():
+                    for alias in meta["aliases"]:
+                        if re.search(r"\b" + re.escape(alias) + r"\b", q, re.IGNORECASE):
+                            place_contains = meta["canonical_name_es"]
+                            break
+                    if place_contains:
+                        break
+
+            if not place_contains:
+                for loc in cls.KNOWN_LOCATIONS:
+                    if loc.lower() in q:
+                        place_contains = loc
+                        break
             if not place_contains:
                 # Fuzzy matching for user typos (e.g. 'antioqia', 'santandr')
                 words = [w for w in re.findall(r"[a-záéíóúñ]{4,}", q) if w not in ["sismo", "temblor", "terremoto", "mayor", "menor", "profundo"]]
