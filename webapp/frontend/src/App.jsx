@@ -332,7 +332,8 @@ export default function App() {
       const assistantMsg = {
         id: Date.now() + 1,
         sender: 'assistant',
-        text: data.response
+        text: data.response,
+        telemetry: data.telemetry
       };
       setChatMessages(prev => [...prev, assistantMsg]);
     } catch (e) {
@@ -560,10 +561,24 @@ export default function App() {
                   {msg.sender === 'user' ? (
                     <div>{msg.text}</div>
                   ) : (
-                    <FormattedMessage 
-                      text={msg.text} 
-                      onSelectLocation={handleSelectLocation} 
-                    />
+                    <>
+                      <FormattedMessage 
+                        text={msg.text} 
+                        onSelectLocation={handleSelectLocation} 
+                      />
+                      {msg.telemetry && (
+                        <div className="mt-2 pt-1.5 border-t border-white/5 flex items-center justify-between text-[10px] text-zinc-400 font-mono">
+                          <span>
+                            {msg.telemetry.storage_backend === 'VECTOR_DATABASE' ? (
+                              <span className="text-zinc-300 font-medium">⚡ Vector DB (all-minilm) • sim: {Math.round((msg.telemetry.vector_similarity || 1) * 100)}%</span>
+                            ) : (
+                              <span>⚡ {msg.telemetry.model || 'Llama 3.2'}</span>
+                            )}
+                          </span>
+                          <span>0 tokens • {msg.telemetry.latency_ms}ms</span>
+                        </div>
+                      )}
+                    </>
                   )}
                 </div>
               </div>

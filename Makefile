@@ -35,6 +35,12 @@ ollama: ## Verifica e inicia el servicio Ollama con el modelo Llama 3.2 (3B)
 		echo "    Descargando modelo llama3.2:3b (~2.0 GB)..."; \
 		$(OLLAMA_BIN) pull llama3.2:3b; \
 	fi
+	@if curl -s http://127.0.0.1:11434/api/tags | grep -q "all-minilm"; then \
+		echo "    Modelo de embeddings all-minilm listo para Base de Datos Vectorial."; \
+	else \
+		echo "    Descargando modelo de embeddings all-minilm (~45 MB)..."; \
+		$(OLLAMA_BIN) pull all-minilm; \
+	fi
 
 # ------------------------------------------------------------------------------
 # 3. PIPELINE DE DATOS: EXTRACCIÓN EN VIVO USGS + ARQUITECTURA MEDALLION (SPARK)
@@ -91,9 +97,14 @@ dev-ui: ## Inicia el servidor de desarrollo de Vite con Hot Module Replacement (
 # 8. BATERÍA COMPLETA DE PRUEBAS AUTOMATIZADAS
 # ------------------------------------------------------------------------------
 .PHONY: test
-test: ## Ejecuta los 45 tests automatizados del proyecto
-	@echo "==> Ejecutando suite completa de 45 tests con Pytest..."
+test: ## Ejecuta la suite completa de tests automatizados del proyecto
+	@echo "==> Ejecutando suite completa de tests con Pytest..."
 	@PYTHONPATH=. $(PYTEST) tests/ -v
+
+.PHONY: test-vector
+test-vector: ## Ejecuta las pruebas del Router Semántico y Base de Datos Vectorial
+	@echo "==> Ejecutando tests del Router Semántico Vectorial..."
+	@PYTHONPATH=. $(PYTEST) tests/test_vector_router.py -v
 
 # ------------------------------------------------------------------------------
 # 9. GESTIÓN DE PROCESOS Y LIMPIEZA

@@ -13,13 +13,20 @@ from agent.core.semantic_parser import SeismologicalNLU
 from agent.database.curated_client import CuratedDataClient
 from agent.core.narrator import ResponseNarrator
 from agent.llm.ollama_client import OllamaClient
+from agent.vector.predefined_vector_db import PredefinedVectorDB
 
 class SismoWatchAgent:
     """Master Local AI Agent for SismoWatch with zero-token deterministic grounding."""
 
-    def __init__(self, db_client: Optional[CuratedDataClient] = None, ollama_client: Optional[OllamaClient] = None):
+    def __init__(
+        self,
+        db_client: Optional[CuratedDataClient] = None,
+        ollama_client: Optional[OllamaClient] = None,
+        vector_router: Optional[PredefinedVectorDB] = None
+    ):
         self.db_client = db_client or CuratedDataClient()
         self.ollama = ollama_client or OllamaClient()
+        self.vector_router = vector_router or PredefinedVectorDB()
         self.session_context: Dict[str, Any] = {
             "last_intent": None,
             "last_place_contains": None,
@@ -65,8 +72,35 @@ class SismoWatchAgent:
         sanitized_query = sec_result.sanitized_text
 
         # -------------------------------------------------------------
-        # 2. CONVERSATIONAL FAST-ROUTER (Greetings, Pleasantries, Scope)
+        # 2. CONVERSATIONAL VECTOR ROUTER (Vector DB Semantic Search)
         # -------------------------------------------------------------
+        vector_resp = None
+        try:
+            vector_resp = self.vector_router.search(sanitized_query)
+        except Exception:
+            vector_resp = None
+
+        if vector_resp:
+            elapsed_ms = round((time.time() - start_time) * 1000, 2)
+            return {
+                "response": vector_resp["text"],
+                "speech_text": vector_resp.get("speech_text", vector_resp["text"]),
+                "telemetry": {
+                    "model": vector_resp.get("model", "vector-semantic-router (all-minilm)"),
+                    "storage_backend": "VECTOR_DATABASE",
+                    "vector_similarity": vector_resp.get("vector_similarity", 1.0),
+                    "matched_anchor": vector_resp.get("matched_anchor"),
+                    "tokens_consumed": 0,
+                    "cost_usd": 0.00,
+                    "latency_ms": elapsed_ms,
+                    "anti_injection_status": "PASSED",
+                    "intent": vector_resp["category"],
+                    "evaluation_score": 1.0,
+                    "hallucination_probability": "0.00%"
+                }
+            }
+
+        # Fallback to rule-based conversation router (Out-of-scope, etc.)
         fast_resp = ConversationRouter.evaluate(sanitized_query)
         if fast_resp:
             elapsed_ms = round((time.time() - start_time) * 1000, 2)
@@ -75,6 +109,7 @@ class SismoWatchAgent:
                 "speech_text": fast_resp.get("speech_text", fast_resp["text"]),
                 "telemetry": {
                     "model": "local-sismowatch-nlu-engine",
+                    "storage_backend": "RULE_ROUTER",
                     "tokens_consumed": 0,
                     "cost_usd": 0.00,
                     "latency_ms": elapsed_ms,
